@@ -1,8 +1,7 @@
 import React from 'react';
 import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon} from './themes.js';
-import { Box} from '@mui/material';
-import { GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
-import Plot from 'react-plotly.js';
+import {Box} from '@mui/material';
+import {GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
 
 const http = require('http')
 
@@ -61,6 +60,14 @@ class PerformanceDataTable extends React.Component
 	{
 		// rows
 		var list = [];
+
+		var selectedMeasures = {};
+		for (let i = 0; i < this.state.selectedEvaluationMeasures.length; i++)
+		{
+			selectedMeasures[this.state.selectedEvaluationMeasures[i]['measure']] = this.state.selectedEvaluationMeasures[i]['range'];
+
+		}
+
 		// post request
 		//var req = "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query) // change back
 		var req = "http://localhost:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query)
@@ -151,9 +158,7 @@ class PerformanceDataTable extends React.Component
 							}
 							else
 							{
-								try{
 								subList[this.state.evaluationMeasureList[j]] = result[3].split('</literal>')[0].split(";")[j].split(":")[1]	
-								}catch{}
 							}
 						}
 
@@ -203,14 +208,6 @@ class PerformanceDataTable extends React.Component
 			.on("error", (err) => {
 				console.log(err)
 			});
-
-		var selectedMeasures = {};
-		for (let i = 0; i < this.state.selectedEvaluationMeasures.length; i++)
-		{
-			selectedMeasures[this.state.selectedEvaluationMeasures[i]['measure']] = this.state.selectedEvaluationMeasures[i]['range'];
-
-		}
-		console.log(selectedMeasures);
 
 		// columns
 		var columns = [
@@ -282,6 +279,8 @@ class PerformanceDataTable extends React.Component
 					
 			SELECT ?datasetLabel ?Algorithm (group_concat( concat(?evaluationMeasureClassLabel , ":", ?value) ;separator=";") as ?EvaluationMeasures) ?model
 			WHERE {
+select *
+where {
 			?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
 			?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
 			?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
@@ -301,8 +300,14 @@ class PerformanceDataTable extends React.Component
 ?predictiveModelingAlgorithmExecution <http://purl.obolibrary.org/obo/OBI_0000299> ?predictiveModel.
 ?predictiveModel <http://www.ontodm.com/OntoDM-core/ontoexp_0072> ?model.
 
+MINUS {
+	?oneFoldTestTwoFoldTrainDatasetAssigment ?precedes2 ?predictiveModelTrainTestEvaluationWorkflowExecution. 
+	?oneFoldTestTwoFoldTrainDatasetAssigment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
+	}
+
 			BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
 			${filterString}
+} order by (lcase(?evaluationMeasureClassLabel)) 
 			}
 			GROUP BY ?datasetLabel ?Algorithm ?model
 			ORDER BY ?datasetLabel ?Algorithm
@@ -316,6 +321,8 @@ class PerformanceDataTable extends React.Component
 					
 			SELECT ?datasetLabel ?Algorithm (group_concat( concat(?evaluationMeasureClassLabel , ":", ?value) ;separator=";") as ?EvaluationMeasures) ?model ?TunedParameters ?Fold
 			WHERE {
+				select *
+where {
 				?foldTestFoldTrainDatasetAssignment <http://www.obofoundry.org/ro/ro.owl#precedes> ?predictiveModelTrainTestEvaluationWorkflowExecution .
 				?foldTestFoldTrainDatasetAssignment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
 				?foldTestFoldTrainDatasetAssignment ?hasSpecifiedOutput ?foldTest.
@@ -348,6 +355,7 @@ class PerformanceDataTable extends React.Component
 			BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
 			FILTER (regex(?Fold, "test")).
 			${filterString}
+		} order by (lcase(?evaluationMeasureClassLabel)) 
 			}
 			GROUP BY ?datasetLabel ?Algorithm ?model ?TunedParameters ?Fold 
 			ORDER BY ?datasetLabel ?Algorithm ?Fold

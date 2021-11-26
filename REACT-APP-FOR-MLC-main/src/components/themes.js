@@ -65,7 +65,7 @@ export const lightTheme = createTheme({
       },
 });
 
-var currentTheme
+var currentTheme;
 export function toggleTheme(theme){
     currentTheme = theme;
     if (theme === 'dark')

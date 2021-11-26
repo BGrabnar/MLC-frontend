@@ -241,7 +241,7 @@ class Body extends React.Component {
 			<React.Fragment>
 				<div>
 					<FormControlLabel control={
-						<AntSwitch  sx = {{m: 1, ml: 2, color:"red"}}
+						<AntSwitch  sx = {{m: 1, ml: 2}}
 						onChange= {(value) => {
 							if (value.target.checked === true)
 							{
