@@ -29,8 +29,8 @@ class Body extends React.Component {
 			addButtonDisabled: false,
 			disabledMeasures: [],
 			showFilters: 'none',
-			//reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=", //change back
-			reqURL: "http://localhost:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
+			reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
+			//reqURL: "http://localhost:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
 			datasetList: [], 
 			algorithmList: [],
 			evaluationMeasureList: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
@@ -376,6 +376,8 @@ class Body extends React.Component {
 					evaluationMeasureList = {this.state.evaluationMeasureList}
 					validationFolds = {this.state.validationFolds}
 					selectedEvaluationMeasures = {this.state.selectedEvaluationMeasures}
+					hideDatasetColumn = {false}
+					hideAlgorithmColumn = {false}
 				/>
 		</React.Fragment>
 		);

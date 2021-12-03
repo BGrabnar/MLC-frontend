@@ -14,12 +14,10 @@ import Menu from '@mui/material/Menu';
 
 const options = [
 	<Link to='/MainPage'>Main page</Link>,
-	<Link to='/'>Compare</Link>,
-	<Link to='/Ed'>Experiment data</Link>,
-	<Link to='/Dataset'>Dataset</Link>,
-	<Link to='/Method'>Method</Link>,
-	<Link to='/Dataset Grid'>Dataset grid</Link>,
-	<Link to='/Method Grid'>Method grid</Link>
+	<Link to='/Compare'>Compare</Link>,
+	<Link to='/ExperimentData'>Experiment data</Link>,
+	<Link to='/DatasetGrid'>Dataset grid</Link>,
+	<Link to='/MethodGrid'>Method grid</Link>
   ];
 
   //menu list

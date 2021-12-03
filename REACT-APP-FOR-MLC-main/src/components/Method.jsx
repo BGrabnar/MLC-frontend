@@ -4,13 +4,13 @@ import {CustomAutocomplete, CustomPaper} from './themes.js';
 import { TextField } from '@material-ui/core';
 
 
-class Dataset extends React.Component 
+class Method extends React.Component 
 {
     constructor(props) {
     	super(props);
 
 		this.state = {
-			dataset: window.location.pathname.split('/')[2],
+			algorithm: window.location.pathname.split('/')[2],
 			reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
 			evaluationMeasureList: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
 			evaluationMeasureListTrainTest: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
@@ -53,14 +53,14 @@ class Dataset extends React.Component
 
                 <PerformanceDataTable
 					setFilter={click => this.callPerformanceDataTableMethod = click}
-					selectedDatasets = {[this.state.dataset]}
-					selectedAlgorithms = {[]}
+					selectedDatasets = {[]}
+					selectedAlgorithms = {[this.state.algorithm]}
 					selectedFold = {[]}
 					evaluationMeasureList = {this.state.evaluationMeasureList}
 					validationFolds = {this.state.validationFolds}
 					selectedEvaluationMeasures = {[]}
-                    hideDatasetColumn = {true}
-					hideAlgorithmColumn = {false}
+                    hideDatasetColumn = {false}
+					hideAlgorithmColumn = {true}
 				/>
 
             </React.Fragment>
@@ -68,4 +68,4 @@ class Dataset extends React.Component
     }
 }
 
-export default Dataset; 
+export default Method; 

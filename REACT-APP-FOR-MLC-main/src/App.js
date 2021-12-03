@@ -6,6 +6,7 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { toggleTheme } from './components/themes.js';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Dataset from './components/Dataset';
+import Method from './components/Method';
 import Compare from './components/Compare';
 
 class App extends React.Component {
@@ -33,8 +34,9 @@ class App extends React.Component {
         
                 <Header callback = {this.getTheme}/>
                 <Routes>
-                  <Route path="/Ed" element={<BenchmarkDataFilter/>}></Route>
-                  <Route path="/Dataset" element={<Dataset/>}></Route>
+                  <Route path="/ExperimentData" element={<BenchmarkDataFilter/>}></Route>
+                  <Route path="/Dataset/:dataset" element={<Dataset/>}></Route>
+                  <Route path="/Method/:method" element={<Method/>}></Route>
                   <Route path="/" element={<Compare currentTheme={this.state.selectedTheme}/>}></Route>
                 </Routes>
                 

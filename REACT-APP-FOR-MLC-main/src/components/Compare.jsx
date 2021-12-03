@@ -3,6 +3,8 @@ import Plot from 'react-plotly.js';
 import {CustomAutocomplete, CustomPaper, CustomCircularProgress, CustomCard, AntSwitch} from './themes.js';
 import {TextField, Grid} from '@material-ui/core';
 import {Box, FormControlLabel} from '@mui/material';
+import {getList} from './utils.js'
+import { ConstructionOutlined } from '@mui/icons-material';
 
 const http = require('http')
 
@@ -18,33 +20,43 @@ class Compare extends React.Component
             boxValueList: [],
             boxPlotData: [],
             boxPlotLayout: [],
+            boxLoadingData: "flex",
+            showBoxPlot: "none",
 
             violinValueList: [],
             violinPlotData: [],
             violinPlotLayout: [],
+            violinLoadingData: "flex",
+            showViolinPlot: "none",
 
             heatmapValueList: [],
             heatmapPlotData: [],
             heatmapPlotLayout: [],
+            heatmapRanks: {},
+            heatmapLoadingData: "flex",
+            showHeatmapPlot: "none",
+            radarDataset: "ABPM",
+            radarMeasure: 'accuracy example-based',
 
+            radarValueList: [],
+            radarChartData: [],
+            radarChartLayout: [],
+            radarLoadingData: "flex",
+            showRadarChart: "none",
+            radarMeasuresLength: 1,
+
+            reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
             evaluationMeasures: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
             currentTheme: props.currentTheme,
             darkThemeColors: ['#082032', '#2C394B', '#7c848f', '#FB9300', '#fff', '#ff6666'],
             lightThemeColors: ['#343F56', '#F5E6CA', '#f9f0df','#FB9300' , '#000', '#ff0000'],
-
-            boxLoadingData: "flex",
-            violinLoadingData: "flex",
-            heatmapLoadingData: "flex",
-            showBoxPlot: "none",
-            showViolinPlot: "none",
-            showHeatmapPlot: "none",
         };
     }
 
 	componentDidMount(){
-		this.setUpQuery('accuracy example-based', true);
-        this.setUpQuery('accuracy example-based', false);
-        this.setUpHeatmapPlotData();
+		this.setUpQuery('accuracy example-based', 'box');
+        this.setUpQuery('accuracy example-based', 'violin');
+        //this.setUpQuery('accuracy example-based', 'radar');
 	}
 
     componentDidUpdate(prevProps){
@@ -56,17 +68,43 @@ class Compare extends React.Component
                 violinLoadingData: "flex",
             }, ()=>{this.setUpBoxPlotData();
                 this.setUpViolinPlotData();
-                this.setUpHeatmapPlotData()})
+                this.setUpHeatmapPlotData();
+                this.setUpRadarChartData();
+            })
 		}
 	}
 
     // gets the names of the algorithms/methods
-	setUpQuery=(selectedMeasure, boxPlot)=>{
+	setUpQuery=(selectedMeasure, typeOfPlot)=>{
+        console.log(selectedMeasure)
+        var orderString = "";
+        var filterString = ""; // for radar
+        var newMeasures = ``;
+
+        if (typeOfPlot === "heatmap") // a bit messy, will be made better
+            {
+                orderString = "ucase(?datasetLabel) ?Algorithm"
+                newMeasures = `"${selectedMeasure}"`
+            }
+        else if (typeOfPlot === "radar")
+        {
+            this.setState({radarMeasuresLength: selectedMeasure.length})
+            orderString = '?Algorithm ucase(?datasetLabel)'
+            filterString = `Filter(?datasetLabel in ("${this.state.radarDataset}"))`
+            newMeasures = `"${selectedMeasure[0]}"`;
+            for (let i = 1; i < selectedMeasure.length; i++)
+            { newMeasures += `, "${selectedMeasure[i]}"`  }
+        }
+        else {
+            orderString = '?Algorithm ucase(?datasetLabel)'
+        newMeasures = `"${selectedMeasure}"`}
+
+
 		var query = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                 
-        SELECT  ?Algorithm ?datasetLabel ?value
+        SELECT  ?Algorithm ?datasetLabel ?value ?evaluationMeasureClassLabel 
         WHERE {
         ?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
         ?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
@@ -89,23 +127,34 @@ class Compare extends React.Component
             }
 
         BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
-        Filter(?evaluationMeasureClassLabel in ("${selectedMeasure}"))
+        Filter(?evaluationMeasureClassLabel in (${newMeasures}))
+        ${filterString}
         }
-        ORDER BY  ?Algorithm ?datasetLabel
+        ORDER BY ${orderString}
 		`
-
-        this.GetData(query, boxPlot)
+console.log(query)
+        this.getData(query, typeOfPlot)
 	}
 
-    GetData = (query, boxPlot) =>
+    getData = (query, typeOfPlot) =>
 	{
 		var algorithms = [];
         var datasets = [];
         var values = [];
         var subValues = [];
+        var maping = {}; // for heatmap
+
+        if (typeOfPlot === 'heatmap')
+        {
+            var ranks = {};
+            for (let i = 0; i < this.state.algorithmList.length; i++)
+            {
+                ranks[this.state.algorithmList[i]] = new Array(28).fill(0);
+            }
+        }
+
 		// post request
-		//var req = "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query) // change back
-		var req = "http://localhost:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query)
+        var req = this.state.reqURL+encodeURIComponent(query)
 		http.get(req, (resp) => {
 			let data = '';
 			
@@ -122,33 +171,95 @@ class Compare extends React.Component
 					{
                         var result = data.split('<result>')[i].split('<literal>');
 
-                        if (result[1].split('</literal>')[0] !== algorithms[algorithms.length-1])
-                        {
-                            algorithms.push(result[1].split('</literal>')[0]);
-                            values.push(subValues);
-                            subValues = [];
-                        }
+                        if (typeOfPlot === 'heatmap') // handle heatmap data
+                        {   
+                            if (result[2].split('</literal>')[0] !== datasets[datasets.length-1])
+                            {
+                                datasets.push(result[2].split('</literal>')[0]);
+                                if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                                {subValues = subValues.sort()} // lowest value is best
+                                else{subValues = subValues.sort(function(a, b){return b-a});} // highest value is best
 
-                        if (algorithms.length === 1)
-                        {
-                            datasets.push(result[2].split('</literal>')[0])
-                        }
+                                for (let j = 0; j < this.state.algorithmList.length; j++)
+                                {
+                                    var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
+                                    ranks[this.state.algorithmList[j]][index] += 1;
+                                }
+                                
 
-                        subValues.push(result[3].split('</literal>')[0])		
+                                subValues = [];
+                            }
+
+                            maping[result[1].split('</literal>')[0]] = result[3].split('</literal>')[0]
+                            subValues.push(result[3].split('</literal>')[0])
+                        }
+                        else // handle the other plots
+                        {
+                            if (result[1].split('</literal>')[0] !== algorithms[algorithms.length-1])
+                            {
+                                algorithms.push(result[1].split('</literal>')[0]);
+                                values.push(subValues);
+                                subValues = [];
+                            }
+
+                            subValues.push(result[3].split('</literal>')[0])	
+                            
+                            if (algorithms.length === 1)
+                            {
+                                datasets.push(result[2].split('</literal>')[0])
+                            }
+                        }
 					}
+
+                    if (typeOfPlot == 'heatmap')
+                    {                   
+                        
+                        if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                        {subValues = subValues.sort()} // lowest value is best
+                        else{subValues = subValues.sort(function(a, b){return b-a});} // highest value is best
+
+                        for (let j = 0; j < this.state.algorithmList.length; j++)
+                            {
+                                  
+                                var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
+                                ranks[this.state.algorithmList[j]][index] += 1;        
+                            }
+                        
+                        this.setState({
+                           heatmapRanks: ranks
+                        },()=> {this.setUpHeatmapPlotData()});
+
+                        return
+                    }
 
                     values.shift();
                     values.push(subValues);
 
 					this.setState({
 						algorithmList: algorithms,
-                        datasetList: datasets,
                         boxValueList: values,
                         violinValueList: values,
+                        radarValueList: values,
 					})
 
-                    if (boxPlot) {this.setUpBoxPlotData();}
-                    else {this.setUpViolinPlotData();}
+                    if (typeOfPlot !== "radar")
+                    {
+                        this.setState({
+                            datasetList: datasets
+                        })
+                    }
+
+                    switch (typeOfPlot)
+                    {   case 'box':
+                            this.setUpBoxPlotData();
+                            break;
+                        case 'violin':
+                            this.setUpViolinPlotData();
+                            break;
+                        case 'radar':
+                            this.setUpRadarChartData();
+                            break;
+                    }
 				});
 			})
 			.on("error", (err) => {
@@ -196,7 +307,8 @@ class Compare extends React.Component
             color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
         },
         showlegend: false
-    }
+        }
+
         this.setState({
             boxPlotData: thisData,
             boxPlotLayout: thisLayout,
@@ -255,18 +367,81 @@ class Compare extends React.Component
     setUpHeatmapPlotData=()=>{
         var thisData = [
             {
-              z: [[1, 20, 30], [20, 1, 60], [30, 60, 1]],
+              z: Object.values(this.state.heatmapRanks),
+              x: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],
+              y: this.state.algorithmList,
               type: 'heatmap'
             }
           ];
 
+        const thisLayout = {
+            title: "Heatmap",
+            width: 1000,
+            height: 600,
+
+            paper_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[2] : this.state.lightThemeColors[2],
+            plot_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[1] : this.state.lightThemeColors[1],
+            font: {
+                color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
+            },
+          };
+        
         this.setState({
             heatmapPlotData: thisData,
-           /*  heatmapPlotLayout: thisLayout, */
+            heatmapPlotLayout: thisLayout,
             heatmapLoadingData: "none",
         })
 
         this.render();
+    }
+
+    setUpRadarChartData=()=>
+    {
+        console.log(this.state.radarValueList)
+        var edit =[];
+        //for() continue here
+        // to do: loop through all the choosen evaluations measures, so all of them appear on the chart
+        for (let i = 0; i < this.state.radarValueList.length; i++)
+        {
+            edit.push(this.state.radarValueList[i][0])
+        }
+
+        var thisData = [{
+            type: 'scatterpolar',
+            r: edit,
+            theta: this.state.evaluationMeasures,
+            fill: 'toself',
+
+            marker: {
+                size: 2
+            },
+            line: {
+                width: 1
+            }
+        }];
+        console.log(thisData)
+
+        const thisLayout =  { title: 'Radar chart',
+        autosize: true,
+        width: 1000,
+        height: 600,
+        margin: {
+            l: 40,
+            r: 30,
+            b: 80,
+            t: 100
+        },
+        paper_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[2] : this.state.lightThemeColors[2],
+        plot_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[1] : this.state.lightThemeColors[1],
+        font: {
+            color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
+        }}
+
+          this.setState({
+            radarChartData: thisData,
+            radarChartLayout: thisLayout,
+            radarLoadingData: "none",
+        })
     }
 
     render()
@@ -309,7 +484,7 @@ class Compare extends React.Component
                                 }
                                 onChange={(event, value) => {
                                     this.setState({boxLoadingData: "flex"});
-                                    this.setUpQuery(value, true);
+                                    this.setUpQuery(value, 'box');
                                     }
                                 }/> 
 
@@ -323,7 +498,6 @@ class Compare extends React.Component
                                 </div>
 
                             <Plot
-                                style={{color:'red'}}
                                 data ={this.state.boxPlotData}
                                 layout={this.state.boxPlotLayout}
                             />
@@ -367,7 +541,7 @@ class Compare extends React.Component
                                 }
                                 onChange={(event, value) => {
                                     this.setState({violinLoadingData: "flex"});
-                                    this.setUpQuery(value, false);
+                                    this.setUpQuery(value, 'violin');
                                     }
                                 }/> 
 
@@ -381,7 +555,6 @@ class Compare extends React.Component
                                 </div>
 
                             <Plot
-                                style={{color:'red'}}
                                 data ={this.state.violinPlotData}
                                 layout={this.state.violinPlotLayout}
                             />
@@ -397,6 +570,7 @@ class Compare extends React.Component
                                 if (value.target.checked === true)
                                 {
                                     this.setState({showHeatmapPlot: ''})
+                                    this.setUpQuery('accuracy example-based', 'heatmap')
                                 }
                                 else{
                                     this.setState({showHeatmapPlot: 'none'})
@@ -425,7 +599,7 @@ class Compare extends React.Component
                                 }
                                 onChange={(event, value) => {
                                     this.setState({heatmapLoadingData: "flex"});
-                                    this.setUpQuery(value, false);
+                                    this.setUpQuery(value, 'heatmap');
                                     }
                                 }/> 
 
@@ -439,9 +613,81 @@ class Compare extends React.Component
                                 </div>
 
                             <Plot
-                                style={{color:'red'}}
                                 data ={this.state.heatmapPlotData}
                                 layout={this.state.heatmapPlotLayout}
+                            />
+                        </CustomCard>
+                    </Grid>
+                </CustomCard>
+
+                <CustomCard sx={{m:2}}> {/* radar chart */}
+                    <CustomPaper sx={{m:1}}>
+                        <FormControlLabel control={
+                            <AntSwitch  sx = {{m: 1, ml: 2}}
+                            onChange= {(value) => {
+                                if (value.target.checked === true)
+                                {
+                                    this.setState({showRadarChart: ''})
+                                }
+                                else{
+                                    this.setState({showRadarChart: 'none'})
+                                }
+                            }}
+                        />} label="Radar chart"/>
+                    </CustomPaper>
+
+                    <Grid
+                        container
+                        spacing={0}
+                        direction="column"
+                        alignItems="center"
+                        justifyContent="center"
+                    >
+                        <CustomCard sx={{display: this.state.showRadarChart, m:1}}>
+                            <CustomAutocomplete
+                                defaultValue = {"ABPM"}
+                                multiple = {false}							
+                                limitTags={50}
+                                options={this.state.datasetList}
+                                sx={{width: 300, m: 2}}
+                                PaperComponent={CustomPaper}
+                                renderInput={(params) => 
+                                    <TextField {...params} variant='outlined' label = {"Dataset"} color='secondary' />
+                                }
+                                onChange={(event, value) => {
+                                    this.setState({radarLoadingData: "flex", radarDataset: value});
+                                    this.setUpQuery(this.state.radarMeasure, 'radar');
+                                    }
+                                }/> 
+
+                            <CustomAutocomplete
+                                multiple = {true}							
+                                limitTags={50}
+                                options={this.state.evaluationMeasures}
+                                sx={{width: 300, m: 2}}
+                                PaperComponent={CustomPaper}
+                                renderInput={(params) => 
+                                    <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
+                                }
+                                onChange={(event, value) => {
+                                    this.setState({radarLoadingData: "flex", radarMeasure: value});
+                                    this.setUpQuery(value, 'radar');
+                                    }
+                                }/> 
+
+
+                                <div style={{
+                                    display: this.state.radarLoadingData,
+                                    justifyContent: 'center',
+                                    }}>
+                                        <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
+                                            <CustomCircularProgress/>
+                                        </Box>
+                                </div>
+
+                            <Plot
+                                data ={this.state.radarChartData}
+                                layout={this.state.radarChartLayout}
                             />
                         </CustomCard>
                     </Grid>

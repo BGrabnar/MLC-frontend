@@ -2,6 +2,7 @@ import React from 'react';
 import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon} from './themes.js';
 import {Box} from '@mui/material';
 import {GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
+import {Link} from 'react-router-dom';
 
 const http = require('http')
 
@@ -22,8 +23,6 @@ class PerformanceDataTable extends React.Component
         this.state = {
             spreadSheetRows: [],
             spreadSheetColumns: [],
-			plotX: [],
-			plotY: [],
 
             selectedDatasets: props.selectedDatasets,
             selectedAlgorithms: props.selectedAlgorithms,
@@ -31,7 +30,10 @@ class PerformanceDataTable extends React.Component
             selectedEvaluationMeasures: props.selectedEvaluationMeasures,
             evaluationMeasureList: props.evaluationMeasureList,
             validationFolds: props.validationFolds,
-			loadingData: "flex"
+			loadingData: "flex",
+
+			hideDatasetColumn: props.hideDatasetColumn,
+			hideAlgorithmColumn: props.hideAlgorithmColumn,
         };
     }
 
@@ -69,8 +71,8 @@ class PerformanceDataTable extends React.Component
 		}
 
 		// post request
-		//var req = "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query) // change back
-		var req = "http://localhost:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query)
+		var req = "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query)
+		//var req = "http://localhost:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query="+encodeURIComponent(query)
 		http.get(req, (resp) => {
 			let data = '';
 			
@@ -86,7 +88,7 @@ class PerformanceDataTable extends React.Component
 					for (let i = 1; i < data.split('<result>').length; i++)
 					{
 						var result = data.split('<result>')[i].split('<literal>');
-
+						// fill row with data
 						var subList = {
 							id: i,
 							dataset: result[1].split('</literal>')[0],
@@ -97,6 +99,7 @@ class PerformanceDataTable extends React.Component
 						for (let j = 0; j < this.state.evaluationMeasureList.length; j++)
 						{
 							// handle range
+							// range is handled here instead of in the query, because the values are in the same row
 							if (Object.keys(selectedMeasures).includes(this.state.evaluationMeasureList[j]))
 							{
 								if (selectedMeasures[this.state.evaluationMeasureList[j]].match(/^>=[0-9.]+$/))
@@ -212,13 +215,13 @@ class PerformanceDataTable extends React.Component
 		// columns
 		var columns = [
 			{ field: 'id', headerName: '', width: 20, },
-			{ field: 'dataset', headerName: 'Dataset', width: 200, },
-			{ field: 'algorithm', headerName: 'Method', width: 200, },
+			{ field: 'dataset', headerName: 'Dataset', width: 200, hide: this.state.hideDatasetColumn, renderCell: (data) => (<Link to={`/Dataset/${data.value}`}>{data.value}</Link>)},
+			{ field: 'algorithm', headerName: 'Method', width: 200, hide: this.state.hideAlgorithmColumn,  renderCell: (data) => (<Link to={`/Method/${data.value}`}>{data.value}</Link>)},
 			{ field: 'model', headerName: 'Model', width: 100, renderCell: (params) =>  (<CustomTooltip title={params.row.model}><span>{<CustomAddIcon/>}</span></CustomTooltip>),}
 
 		];
 
-		if (this.state.validationFolds) // add extra columns if its folds validation
+		if (this.state.validationFolds) // add extra columns if its the folds validation
 		{
 			var subColumn = {field: 'parameters', headerName: 'Tuned Parameters', width: 400,};
 			columns.push(subColumn);
@@ -393,20 +396,6 @@ where {
 					/>
 				</Box>
             </div>
-
-			{/* <Plot
-				data={[
-				{
-					x: this.state.plotX,
-					y: this.state.plotY,
-					type: 'scatter',
-					mode: 'markers',
-					marker: {color: 'red'},
-				},
-				]}
-				layout={ {width: '99%', height: 240, title: 'A Fancy Plot'} }
-			/> */}
-
 			</React.Fragment>
         );
     }
