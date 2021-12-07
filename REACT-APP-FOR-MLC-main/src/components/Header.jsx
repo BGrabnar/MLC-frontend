@@ -5,82 +5,51 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import {MaterialUISwitch} from './themes.js'
 import PatternIcon from '@mui/icons-material/Pattern';
 import {Link} from 'react-router-dom';
-
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Fade from '@mui/material/Fade';
 
-const options = [
-	<Link to='/MainPage'>Main page</Link>,
-	<Link to='/Compare'>Compare</Link>,
-	<Link to='/ExperimentData'>Experiment data</Link>,
-	<Link to='/DatasetGrid'>Dataset grid</Link>,
-	<Link to='/MethodGrid'>Method grid</Link>
-  ];
-
-  //menu list
-function MenuList() {
-	const [anchorEl, setAnchorEl] = React.useState(null);
-	const [selectedIndex, setSelectedIndex] = React.useState(1);
-	const open = Boolean(anchorEl);
-	const handleClickListItem = (event) => {
-	  setAnchorEl(event.currentTarget);
-	};
-  
-	const handleMenuItemClick = (event, index) => {
-	  setSelectedIndex(index);
-	  setAnchorEl(null);
-	};
-  
-	const handleClose = () => {
-	  setAnchorEl(null);
-	};
-  
-	return (
-	  <div>
-		<List
-		  component="nav"
-		  aria-label="Device settings"
-		  sx={{ bgcolor: 'palette.secondary' }}
-		>
-		  <ListItem
-			button
-			id="lock-button"
-			aria-haspopup="listbox"
-			aria-controls="lock-menu"
-			aria-expanded={open ? 'true' : undefined}
-			onClick={handleClickListItem}
-		  >
-			<ListItemText
-			  primary={options[selectedIndex]}
-			/>
-		  </ListItem>
-		</List>
-		<Menu
-		  id="lock-menu"
-		  anchorEl={anchorEl}
-		  open={open}
-		  onClose={handleClose}
-		  MenuListProps={{
-			'aria-labelledby': 'lock-button',
-			role: 'listbox',
-		  }}
-		>
-		  {options.map((option, index) => (
-			<MenuItem
-			  key={option}
-			  selected={index === selectedIndex}
-			  onClick={(event) => handleMenuItemClick(event, index)}
+  	//menu list
+	function FadeMenu() {
+		const [anchorEl, setAnchorEl] = React.useState(null);
+		const open = Boolean(anchorEl);
+		const handleClick = (event) => {
+		  setAnchorEl(event.currentTarget);
+		};
+		const handleClose = () => {
+		  setAnchorEl(null);
+		};
+	  
+		return (
+		  <div>
+			<Button
+			  id="fade-button"
+			  aria-controls="fade-menu"
+			  aria-haspopup="true"
+			  aria-expanded={open ? 'true' : undefined}
+			  onClick={handleClick}
+			  sx = {{m:1.5}}
 			>
-			  {option}
-			</MenuItem>
-		  ))}
-		</Menu>
-	  </div>
-	);
-  }
+			  Browse
+			</Button>
+			<Menu
+			  id="fade-menu"
+			  MenuListProps={{
+				'aria-labelledby': 'fade-button',
+			  }}
+			  anchorEl={anchorEl}
+			  open={open}
+			  onClose={handleClose}
+			  TransitionComponent={Fade}
+			>
+			  <MenuItem onClick={handleClose}><Link to='/Experiments'>Experiments</Link></MenuItem>
+			  <MenuItem onClick={handleClose}><Link to='/Dataset'>Datasets</Link></MenuItem>
+			  <MenuItem onClick={handleClose}><Link to='/Method'>Methods</Link></MenuItem>
+			</Menu>
+		  </div>
+		);
+	}
 
 class Header extends React.Component {
 	ToggleTheme = (theme) => {
@@ -91,7 +60,8 @@ class Header extends React.Component {
 		return (
 				<AppBar position="static">
 					<Toolbar>
-							<Box display='flex' flexGrow={1}>
+						<Box display='flex' flexGrow={1}>
+							<Link to="/">
 								<Box display='flex'sx={{mr:2, mt:2}}>
 									<Box sx={{mt:0.5}}>
 										<PatternIcon sx={{mr:2}}/>
@@ -100,10 +70,11 @@ class Header extends React.Component {
 										MLC Catalogue
 									</Typography>
 								</Box>
-								<MenuList sx={{ml:5}}/>
+							</Link>
+								<FadeMenu/>
 							</Box>
-
-							<FormControlLabel
+							
+							<FormControlLabel sx={{ display: 'none' }}
 								control={<MaterialUISwitch sx={{ m: 1 }} defaultChecked   
 								onChange= {(value) => {
 									if (value.target.checked === true)

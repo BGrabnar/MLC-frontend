@@ -1,10 +1,14 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
-import {CustomAutocomplete, CustomPaper, CustomCircularProgress, CustomCard, AntSwitch} from './themes.js';
+import {CustomAutocomplete, CustomPaper, CustomCircularProgress, CustomCard, CustomAccordion} from './themes.js';
 import {TextField, Grid} from '@material-ui/core';
 import {Box, FormControlLabel} from '@mui/material';
-import {getList} from './utils.js'
-import { ConstructionOutlined } from '@mui/icons-material';
+
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Typography from '@mui/material/Typography';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const http = require('http')
 
@@ -21,29 +25,24 @@ class Compare extends React.Component
             boxPlotData: [],
             boxPlotLayout: [],
             boxLoadingData: "flex",
-            showBoxPlot: "none",
 
             violinValueList: [],
             violinPlotData: [],
             violinPlotLayout: [],
             violinLoadingData: "flex",
-            showViolinPlot: "none",
 
             heatmapValueList: [],
             heatmapPlotData: [],
             heatmapPlotLayout: [],
             heatmapRanks: {},
             heatmapLoadingData: "flex",
-            showHeatmapPlot: "none",
             radarDataset: "ABPM",
-            radarMeasure: 'accuracy example-based',
+            radarMeasure: ['accuracy example-based'],
 
             radarValueList: [],
             radarChartData: [],
             radarChartLayout: [],
             radarLoadingData: "flex",
-            showRadarChart: "none",
-            radarMeasuresLength: 1,
 
             reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
             evaluationMeasures: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
@@ -56,7 +55,7 @@ class Compare extends React.Component
 	componentDidMount(){
 		this.setUpQuery('accuracy example-based', 'box');
         this.setUpQuery('accuracy example-based', 'violin');
-        //this.setUpQuery('accuracy example-based', 'radar');
+        this.setUpQuery(['accuracy example-based'], 'radar');
 	}
 
     componentDidUpdate(prevProps){
@@ -76,28 +75,30 @@ class Compare extends React.Component
 
     // gets the names of the algorithms/methods
 	setUpQuery=(selectedMeasure, typeOfPlot)=>{
-        console.log(selectedMeasure)
         var orderString = "";
         var filterString = ""; // for radar
         var newMeasures = ``;
 
-        if (typeOfPlot === "heatmap") // a bit messy, will be made better
-            {
-                orderString = "ucase(?datasetLabel) ?Algorithm"
-                newMeasures = `"${selectedMeasure}"`
-            }
+        if (typeOfPlot === "heatmap")
+        {
+            orderString = "ucase(?datasetLabel) ?Algorithm"
+            newMeasures = `"${selectedMeasure}"`
+        }
         else if (typeOfPlot === "radar")
         {
-            this.setState({radarMeasuresLength: selectedMeasure.length})
             orderString = '?Algorithm ucase(?datasetLabel)'
             filterString = `Filter(?datasetLabel in ("${this.state.radarDataset}"))`
             newMeasures = `"${selectedMeasure[0]}"`;
             for (let i = 1; i < selectedMeasure.length; i++)
-            { newMeasures += `, "${selectedMeasure[i]}"`  }
+            { 
+                newMeasures += `, "${selectedMeasure[i]}"`
+            }
         }
-        else {
+        else 
+        {
             orderString = '?Algorithm ucase(?datasetLabel)'
-        newMeasures = `"${selectedMeasure}"`}
+            newMeasures = `"${selectedMeasure}"`
+        }
 
 
 		var query = `
@@ -132,7 +133,7 @@ class Compare extends React.Component
         }
         ORDER BY ${orderString}
 		`
-console.log(query)
+
         this.getData(query, typeOfPlot)
 	}
 
@@ -142,10 +143,10 @@ console.log(query)
         var datasets = [];
         var values = [];
         var subValues = [];
-        var maping = {}; // for heatmap
 
-        if (typeOfPlot === 'heatmap')
+        if (typeOfPlot === 'heatmap') // create a map of zeros
         {
+            var maping = {}; // for heatmap
             var ranks = {};
             for (let i = 0; i < this.state.algorithmList.length; i++)
             {
@@ -186,7 +187,6 @@ console.log(query)
                                     ranks[this.state.algorithmList[j]][index] += 1;
                                 }
                                 
-
                                 subValues = [];
                             }
 
@@ -211,52 +211,52 @@ console.log(query)
                         }
 					}
 
-                    if (typeOfPlot == 'heatmap')
-                    {                   
-                        
-                        if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
-                        {subValues = subValues.sort()} // lowest value is best
-                        else{subValues = subValues.sort(function(a, b){return b-a});} // highest value is best
-
-                        for (let j = 0; j < this.state.algorithmList.length; j++)
-                            {
-                                  
-                                var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
-                                ranks[this.state.algorithmList[j]][index] += 1;        
-                            }
-                        
-                        this.setState({
-                           heatmapRanks: ranks
-                        },()=> {this.setUpHeatmapPlotData()});
-
-                        return
-                    }
-
-                    values.shift();
-                    values.push(subValues);
-
-					this.setState({
-						algorithmList: algorithms,
-                        boxValueList: values,
-                        violinValueList: values,
-                        radarValueList: values,
-					})
-
-                    if (typeOfPlot !== "radar")
-                    {
-                        this.setState({
-                            datasetList: datasets
-                        })
-                    }
-
                     switch (typeOfPlot)
                     {   case 'box':
+                            values.shift();
+                            values.push(subValues);
+                            this.setState({
+                                algorithmList: algorithms,
+                                boxValueList: values,
+                                datasetList: datasets
+                            })
                             this.setUpBoxPlotData();
                             break;
+
                         case 'violin':
+                            values.shift();
+                            values.push(subValues);
+                            this.setState({
+                                algorithmList: algorithms,
+                                violinValueList: values,
+                            })
                             this.setUpViolinPlotData();
                             break;
+
+                        case 'heatmap':
+                            if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                                {subValues = subValues.sort()} // lowest value is best
+                            else {subValues = subValues.sort(function(a, b){return b-a});} // highest value is best
+
+                            for (let j = 0; j < this.state.algorithmList.length; j++)
+                                {
+                                    
+                                    var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
+                                    ranks[this.state.algorithmList[j]][index] += 1;        
+                                }
+                            
+                            this.setState({
+                            heatmapRanks: ranks
+                            },()=> {this.setUpHeatmapPlotData()});
+                            return
+
                         case 'radar':
+                            values.shift();
+                            values.push(subValues);
+                            this.setState({
+                                algorithmList: algorithms,
+                                radarValueList: values,
+                            })
                             this.setUpRadarChartData();
                             break;
                     }
@@ -397,29 +397,32 @@ console.log(query)
 
     setUpRadarChartData=()=>
     {
-        console.log(this.state.radarValueList)
         var edit =[];
-        //for() continue here
-        // to do: loop through all the choosen evaluations measures, so all of them appear on the chart
-        for (let i = 0; i < this.state.radarValueList.length; i++)
+        var thisData = [];
+        for (let j = 0; j < this.state.radarMeasure.length; j++)
         {
-            edit.push(this.state.radarValueList[i][0])
-        }
-
-        var thisData = [{
-            type: 'scatterpolar',
-            r: edit,
-            theta: this.state.evaluationMeasures,
-            fill: 'toself',
-
-            marker: {
-                size: 2
-            },
-            line: {
-                width: 1
+            for (let i = 0; i < this.state.radarValueList.length; i++)
+            {
+                edit.push(this.state.radarValueList[i][j])
             }
-        }];
-        console.log(thisData)
+
+            var singleData = {
+                type: 'scatterpolar',
+                r: edit,
+                theta: this.state.algorithmList,
+                fill: 'toself',
+                name: this.state.radarMeasure[j],
+
+                marker: {
+                    size: 2
+                },
+                line: {
+                    width: 1
+                }
+            };
+            edit = [];
+            thisData.push(singleData);
+        }
 
         const thisLayout =  { title: 'Radar chart',
         autosize: true,
@@ -431,10 +434,14 @@ console.log(query)
             b: 80,
             t: 100
         },
-        paper_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[2] : this.state.lightThemeColors[2],
+        polar: {
+            bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[2] : this.state.lightThemeColors[2],
+        },
+        paper_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[1] : this.state.lightThemeColors[1],
         plot_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[1] : this.state.lightThemeColors[1],
         font: {
-            color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
+            color:this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
+            scale: 'red'
         }}
 
           this.setState({
@@ -449,29 +456,15 @@ console.log(query)
         return(
             <React.Fragment>
                 <CustomCard sx={{m:2}}> {/* box plot */}
-                    <CustomPaper sx={{m:1}}>
-                        <FormControlLabel control={
-                            <AntSwitch  sx = {{m: 1, ml: 2}}
-                            onChange= {(value) => {
-                                if (value.target.checked === true)
-                                {
-                                    this.setState({showBoxPlot: ''})
-                                }
-                                else{
-                                    this.setState({showBoxPlot: 'none'})
-                                }
-                            }}
-                        />} label="Box plot"/>
-                    </CustomPaper>
-
-                    <Grid
-                        container
-                        spacing={0}
-                        direction="column"
-                        alignItems="center"
-                        justifyContent="center"
+                <CustomAccordion TransitionProps={{ unmountOnExit: true }}>
+                    <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        aria-controls="panel1a-content"
+                        id="panel1a-header"
                     >
-                        <CustomCard sx={{display: this.state.showBoxPlot, m:1}}>
+                        <Typography>Box plot</Typography>
+                    </AccordionSummary>
+                        <AccordionDetails>
                             <CustomAutocomplete
                                 defaultValue = {this.state.evaluationMeasures[0]}
                                 multiple = {false}							
@@ -501,34 +494,21 @@ console.log(query)
                                 data ={this.state.boxPlotData}
                                 layout={this.state.boxPlotLayout}
                             />
-                        </CustomCard>
-                    </Grid>
+                        </AccordionDetails>
+                    </CustomAccordion>
                 </CustomCard>
 
                 <CustomCard sx={{m:2}}> {/* violin plot */}
-                    <CustomPaper sx={{m:1}}>
-                        <FormControlLabel control={
-                            <AntSwitch  sx = {{m: 1, ml: 2}}
-                            onChange= {(value) => {
-                                if (value.target.checked === true)
-                                {
-                                    this.setState({showViolinPlot: ''})
-                                }
-                                else{
-                                    this.setState({showViolinPlot: 'none'})
-                                }
-                            }}
-                        />} label="Violin plot"/>
-                    </CustomPaper>
-
-                    <Grid
-                        container
-                        spacing={0}
-                        direction="column"
-                        alignItems="center"
-                        justifyContent="center"
-                    >
-                        <CustomCard sx={{display: this.state.showViolinPlot, m:1}}>
+                            <CustomAccordion>
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    aria-controls="panel1a-content"
+                                    id="panel1a-header"
+                                >
+                                    <Typography>Violin plot</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                       
                             <CustomAutocomplete
                                 defaultValue = {this.state.evaluationMeasures[0]}
                                 multiple = {false}							
@@ -558,35 +538,20 @@ console.log(query)
                                 data ={this.state.violinPlotData}
                                 layout={this.state.violinPlotLayout}
                             />
-                        </CustomCard>
-                    </Grid>
+                                      </AccordionDetails>
+                            </CustomAccordion>
                 </CustomCard>
                                 
                 <CustomCard sx={{m:2}}> {/* heatmap */}
-                    <CustomPaper sx={{m:1}}>
-                        <FormControlLabel control={
-                            <AntSwitch  sx = {{m: 1, ml: 2}}
-                            onChange= {(value) => {
-                                if (value.target.checked === true)
-                                {
-                                    this.setState({showHeatmapPlot: ''})
-                                    this.setUpQuery('accuracy example-based', 'heatmap')
-                                }
-                                else{
-                                    this.setState({showHeatmapPlot: 'none'})
-                                }
-                            }}
-                        />} label="Ranking heatmap"/>
-                    </CustomPaper>
-
-                    <Grid
-                        container
-                        spacing={0}
-                        direction="column"
-                        alignItems="center"
-                        justifyContent="center"
+                <CustomAccordion>
+                    <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        aria-controls="panel1a-content"
+                        id="panel1a-header"
                     >
-                        <CustomCard sx={{display: this.state.showHeatmapPlot, m:1}}>
+                        <Typography>Heatmap</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
                             <CustomAutocomplete
                                 defaultValue = {this.state.evaluationMeasures[0]}
                                 multiple = {false}							
@@ -616,34 +581,20 @@ console.log(query)
                                 data ={this.state.heatmapPlotData}
                                 layout={this.state.heatmapPlotLayout}
                             />
-                        </CustomCard>
-                    </Grid>
+          </AccordionDetails>
+        </CustomAccordion>
                 </CustomCard>
 
                 <CustomCard sx={{m:2}}> {/* radar chart */}
-                    <CustomPaper sx={{m:1}}>
-                        <FormControlLabel control={
-                            <AntSwitch  sx = {{m: 1, ml: 2}}
-                            onChange= {(value) => {
-                                if (value.target.checked === true)
-                                {
-                                    this.setState({showRadarChart: ''})
-                                }
-                                else{
-                                    this.setState({showRadarChart: 'none'})
-                                }
-                            }}
-                        />} label="Radar chart"/>
-                    </CustomPaper>
-
-                    <Grid
-                        container
-                        spacing={0}
-                        direction="column"
-                        alignItems="center"
-                        justifyContent="center"
-                    >
-                        <CustomCard sx={{display: this.state.showRadarChart, m:1}}>
+                <CustomAccordion>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="panel1a-content"
+            id="panel1a-header"
+          >
+            <Typography>Radar chart</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
                             <CustomAutocomplete
                                 defaultValue = {"ABPM"}
                                 multiple = {false}							
@@ -655,12 +606,12 @@ console.log(query)
                                     <TextField {...params} variant='outlined' label = {"Dataset"} color='secondary' />
                                 }
                                 onChange={(event, value) => {
-                                    this.setState({radarLoadingData: "flex", radarDataset: value});
-                                    this.setUpQuery(this.state.radarMeasure, 'radar');
+                                    this.setState({radarLoadingData: "flex", radarDataset: value}, () => {this.setUpQuery(this.state.radarMeasure, 'radar');});
                                     }
                                 }/> 
 
                             <CustomAutocomplete
+                                defaultValue = {['accuracy example-based']}
                                 multiple = {true}							
                                 limitTags={50}
                                 options={this.state.evaluationMeasures}
@@ -689,8 +640,8 @@ console.log(query)
                                 data ={this.state.radarChartData}
                                 layout={this.state.radarChartLayout}
                             />
-                        </CustomCard>
-                    </Grid>
+          </AccordionDetails>
+        </CustomAccordion>
                 </CustomCard>
 
             </React.Fragment>

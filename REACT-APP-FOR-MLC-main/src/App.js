@@ -8,6 +8,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Dataset from './components/Dataset';
 import Method from './components/Method';
 import Compare from './components/Compare';
+import LandingPage from './components/LandingPage';
 
 class App extends React.Component {
   constructor(props){
@@ -34,10 +35,13 @@ class App extends React.Component {
         
                 <Header callback = {this.getTheme}/>
                 <Routes>
-                  <Route path="/ExperimentData" element={<BenchmarkDataFilter/>}></Route>
+                  <Route path="/" element={<LandingPage/>}></Route>
+                  <Route path="/Experiments" element={<BenchmarkDataFilter/>}></Route>
+                  <Route path="/Dataset" element={<Dataset/>}></Route>
                   <Route path="/Dataset/:dataset" element={<Dataset/>}></Route>
+                  <Route path="/Method" element={<Method/>}></Route>
                   <Route path="/Method/:method" element={<Method/>}></Route>
-                  <Route path="/" element={<Compare currentTheme={this.state.selectedTheme}/>}></Route>
+                  <Route path="/Compare" element={<Compare currentTheme={this.state.selectedTheme}/>}></Route>
                 </Routes>
                 
           </MuiThemeProvider>

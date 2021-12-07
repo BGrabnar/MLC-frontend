@@ -10,7 +10,7 @@ class Method extends React.Component
     	super(props);
 
 		this.state = {
-			algorithm: window.location.pathname.split('/')[2],
+			algorithm: window.location.pathname.split('/')[2] === undefined ? [] : [window.location.pathname.split('/')[2]],
 			reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
 			evaluationMeasureList: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
 			evaluationMeasureListTrainTest: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
@@ -54,7 +54,7 @@ class Method extends React.Component
                 <PerformanceDataTable
 					setFilter={click => this.callPerformanceDataTableMethod = click}
 					selectedDatasets = {[]}
-					selectedAlgorithms = {[this.state.algorithm]}
+					selectedAlgorithms = {this.state.algorithm}
 					selectedFold = {[]}
 					evaluationMeasureList = {this.state.evaluationMeasureList}
 					validationFolds = {this.state.validationFolds}
