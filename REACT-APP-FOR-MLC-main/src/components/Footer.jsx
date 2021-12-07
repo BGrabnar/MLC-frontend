@@ -6,7 +6,7 @@ class Footer extends React.Component {
   	render() {
 		return (
             <React.Fragment>
-                <div style={{position: 'absolute', left: '0%', top: '98%', width: '100%'}}>
+                <div style={{position: 'absolute', left: '0%', top: '100%', width: '100%'}}>
                     
                         <AppBar position="static">
                         <Grid

@@ -1,8 +1,8 @@
 import React from 'react';
-import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon} from './themes.js';
+import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon, CustomLink} from './themes.js';
 import {Box} from '@mui/material';
 import {GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
-import {Link} from 'react-router-dom';
+
 
 const http = require('http')
 
@@ -215,8 +215,8 @@ class PerformanceDataTable extends React.Component
 		// columns
 		var columns = [
 			{ field: 'id', headerName: '', width: 20, },
-			{ field: 'dataset', headerName: 'Dataset', width: 200, hide: this.state.hideDatasetColumn, renderCell: (data) => (<Link to={`/Dataset/${data.value}`}>{data.value}</Link>)},
-			{ field: 'algorithm', headerName: 'Method', width: 200, hide: this.state.hideAlgorithmColumn,  renderCell: (data) => (<Link to={`/Method/${data.value}`}>{data.value}</Link>)},
+			{ field: 'dataset', headerName: 'Dataset', width: 200, hide: this.state.hideDatasetColumn, renderCell: (data) => (<CustomLink to={`/Dataset/${data.value}`}>{data.value}</CustomLink>)},
+			{ field: 'algorithm', headerName: 'Method', width: 200, hide: this.state.hideAlgorithmColumn,  renderCell: (data) => (<CustomLink to={`/Method/${data.value}`}>{data.value}</CustomLink>)},
 			{ field: 'model', headerName: 'Model', width: 100, renderCell: (params) =>  (<CustomTooltip title={params.row.model}><span>{<CustomAddIcon/>}</span></CustomTooltip>),}
 
 		];

@@ -4,11 +4,11 @@ import Box from '@material-ui/core/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import {MaterialUISwitch} from './themes.js'
 import PatternIcon from '@mui/icons-material/Pattern';
-import {Link} from 'react-router-dom';
 import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Fade from '@mui/material/Fade';
+import {CustomLink, CustomMenuItem} from './themes.js';
 
   	//menu list
 	function FadeMenu() {
@@ -43,9 +43,9 @@ import Fade from '@mui/material/Fade';
 			  onClose={handleClose}
 			  TransitionComponent={Fade}
 			>
-			  <MenuItem onClick={handleClose}><Link to='/Experiments'>Experiments</Link></MenuItem>
-			  <MenuItem onClick={handleClose}><Link to='/Dataset'>Datasets</Link></MenuItem>
-			  <MenuItem onClick={handleClose}><Link to='/Method'>Methods</Link></MenuItem>
+			  <CustomMenuItem onClick={handleClose}><Typography><CustomLink to='/Experiments'>Experiments</CustomLink></Typography></CustomMenuItem>
+			  <CustomMenuItem onClick={handleClose}><Typography><CustomLink to='/Dataset'>Datasets</CustomLink></Typography></CustomMenuItem>
+			  <CustomMenuItem onClick={handleClose}><Typography><CustomLink to='/Method'>Methods</CustomLink></Typography></CustomMenuItem>
 			</Menu>
 		  </div>
 		);
@@ -63,7 +63,7 @@ class Header extends React.Component {
 						
 						<Box display='flex' flexGrow={1}>
 						
-							<Link to="/">
+							<CustomLink to="/">
 								<Box display='flex'sx={{mr:2, mt:2, width: 600}}>
 									<Box sx={{mt:0.5}}>
 										<PatternIcon sx={{mr:2}}/>
@@ -72,10 +72,10 @@ class Header extends React.Component {
 										MLC Catalogue
 									</Typography>
 								</Box>
-							</Link>
+							</CustomLink>
 							<Grid container justify="flex-end">
 									<FadeMenu/>
-									<Link to="/Compare" style={{marginTop: 17}}>COMPARE</Link> 
+									<Button><CustomLink to="/Compare">COMPARE</CustomLink> </Button>
 								</Grid>
 							</Box>
 							

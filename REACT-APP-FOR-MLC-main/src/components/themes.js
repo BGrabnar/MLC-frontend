@@ -4,6 +4,10 @@ import {Switch, Card, Autocomplete, Paper, Button, CircularProgress, Tooltip } f
 import { TextField } from '@material-ui/core';
 import { DataGrid } from '@material-ui/data-grid';
 import MuiAccordion from '@mui/material/Accordion';
+import {Link} from 'react-router-dom';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import { color } from "@mui/system";
 
 // 0: header   1: body  2: pannels  3: highlight  4: text    5: error
 const darkThemeColors = ['#082032', '#2C394B', '#7c848f', '#FB9300', '#fff', '#ff6666'];
@@ -29,7 +33,6 @@ export const darkTheme = createTheme({
     typography: {
         h1: {
             color:  darkThemeColors[4],
-            backgroundColor:  darkThemeColors[1],
             fontSize: '20rem',
             textAlign: "center",
         },
@@ -63,7 +66,6 @@ export const lightTheme = createTheme({
     typography: {
       h1: {
         color:  lightThemeColors[4],
-        backgroundColor:  lightThemeColors[1],
         fontSize: '20rem',
         textAlign: "center",
       },
@@ -310,3 +312,14 @@ export const CustomAccordion = styled((props) => (
   backgroundColor: currentTheme === 'dark' ? darkThemeColors[2] : lightThemeColors[2],
 }));
 
+// link
+export const CustomLink = styled(Link)(({}) => ({
+  color: currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+  textDecoration: "none"
+}));
+
+// menus
+export const CustomMenuItem = styled(MenuItem)(({}) => ({
+  fill: "red",
+  backgroundColor : currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+}));
