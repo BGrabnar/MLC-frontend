@@ -60,9 +60,11 @@ class Header extends React.Component {
 		return (
 				<AppBar position="static">
 					<Toolbar>
+						
 						<Box display='flex' flexGrow={1}>
+						
 							<Link to="/">
-								<Box display='flex'sx={{mr:2, mt:2}}>
+								<Box display='flex'sx={{mr:2, mt:2, width: 600}}>
 									<Box sx={{mt:0.5}}>
 										<PatternIcon sx={{mr:2}}/>
 									</Box>
@@ -71,7 +73,10 @@ class Header extends React.Component {
 									</Typography>
 								</Box>
 							</Link>
-								<FadeMenu/>
+							<Grid container justify="flex-end">
+									<FadeMenu/>
+									<Link to="/Compare" style={{marginTop: 17}}>COMPARE</Link> 
+								</Grid>
 							</Box>
 							
 							<FormControlLabel sx={{ display: 'none' }}

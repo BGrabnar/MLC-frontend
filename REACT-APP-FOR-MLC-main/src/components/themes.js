@@ -4,9 +4,6 @@ import {Switch, Card, Autocomplete, Paper, Button, CircularProgress, Tooltip } f
 import { TextField } from '@material-ui/core';
 import { DataGrid } from '@material-ui/data-grid';
 import MuiAccordion from '@mui/material/Accordion';
-import MuiAccordionSummary from '@mui/material/AccordionSummary';
-import MuiAccordionDetails from '@mui/material/AccordionDetails';
-import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 
 // 0: header   1: body  2: pannels  3: highlight  4: text    5: error
 const darkThemeColors = ['#082032', '#2C394B', '#7c848f', '#FB9300', '#fff', '#ff6666'];
@@ -30,6 +27,12 @@ export const darkTheme = createTheme({
         },
     },
     typography: {
+        h1: {
+            color:  darkThemeColors[4],
+            backgroundColor:  darkThemeColors[1],
+            fontSize: '20rem',
+            textAlign: "center",
+        },
         body1: {
             color: darkThemeColors[4],
             backgroundColor: darkThemeColors[1],
@@ -58,6 +61,12 @@ export const lightTheme = createTheme({
         }
     },
     typography: {
+      h1: {
+        color:  lightThemeColors[4],
+        backgroundColor:  lightThemeColors[1],
+        fontSize: '20rem',
+        textAlign: "center",
+      },
         body1: {
              color: lightThemeColors[4],
              backgroundColor: lightThemeColors[1],

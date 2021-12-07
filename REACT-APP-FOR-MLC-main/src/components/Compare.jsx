@@ -2,9 +2,8 @@ import React from 'react';
 import Plot from 'react-plotly.js';
 import {CustomAutocomplete, CustomPaper, CustomCircularProgress, CustomCard, CustomAccordion} from './themes.js';
 import {TextField, Grid} from '@material-ui/core';
-import {Box, FormControlLabel} from '@mui/material';
+import {Box} from '@mui/material';
 
-import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
@@ -38,6 +37,7 @@ class Compare extends React.Component
             heatmapLoadingData: "flex",
             radarDataset: "ABPM",
             radarMeasure: ['accuracy example-based'],
+            heatmpaMount: true,
 
             radarValueList: [],
             radarChartData: [],
@@ -148,7 +148,7 @@ class Compare extends React.Component
         {
             var maping = {}; // for heatmap
             var ranks = {};
-            for (let i = 0; i < this.state.algorithmList.length; i++)
+            for (let i = 0; i < 28; i++)
             {
                 ranks[this.state.algorithmList[i]] = new Array(28).fill(0);
             }
@@ -219,8 +219,7 @@ class Compare extends React.Component
                                 algorithmList: algorithms,
                                 boxValueList: values,
                                 datasetList: datasets
-                            })
-                            this.setUpBoxPlotData();
+                            }, () => {this.setUpBoxPlotData()});
                             break;
 
                         case 'violin':
@@ -295,6 +294,7 @@ class Compare extends React.Component
         autosize: true,
         width: 1000,
         height: 600,
+        pad: "center",
         margin: {
             l: 40,
             r: 30,
@@ -309,10 +309,14 @@ class Compare extends React.Component
         showlegend: false
         }
 
+        if (this.state.heatmpaMount === true)
+            {this.setUpQuery('accuracy example-based', 'heatmap');}
+
         this.setState({
             boxPlotData: thisData,
             boxPlotLayout: thisLayout,
             boxLoadingData: "none",
+            heatmpaMount: false,
         })
 
         this.render();
@@ -490,10 +494,18 @@ class Compare extends React.Component
                                         </Box>
                                 </div>
 
-                            <Plot
-                                data ={this.state.boxPlotData}
-                                layout={this.state.boxPlotLayout}
-                            />
+                                <Grid
+                                    container
+                                    spacing={0}
+                                    direction="column"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    >
+                                        <Plot
+                                            data ={this.state.boxPlotData}
+                                            layout={this.state.boxPlotLayout}
+                                        />
+                                </Grid>
                         </AccordionDetails>
                     </CustomAccordion>
                 </CustomCard>
@@ -534,10 +546,18 @@ class Compare extends React.Component
                                         </Box>
                                 </div>
 
+                                <Grid
+                                    container
+                                    spacing={0}
+                                    direction="column"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    >
                             <Plot
                                 data ={this.state.violinPlotData}
                                 layout={this.state.violinPlotLayout}
                             />
+                            </Grid>
                                       </AccordionDetails>
                             </CustomAccordion>
                 </CustomCard>
@@ -577,10 +597,18 @@ class Compare extends React.Component
                                         </Box>
                                 </div>
 
+                                <Grid
+                                    container
+                                    spacing={0}
+                                    direction="column"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    >
                             <Plot
                                 data ={this.state.heatmapPlotData}
                                 layout={this.state.heatmapPlotLayout}
                             />
+                            </Grid>
           </AccordionDetails>
         </CustomAccordion>
                 </CustomCard>
@@ -636,10 +664,18 @@ class Compare extends React.Component
                                         </Box>
                                 </div>
 
+                                <Grid
+                                    container
+                                    spacing={0}
+                                    direction="column"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    >
                             <Plot
                                 data ={this.state.radarChartData}
                                 layout={this.state.radarChartLayout}
                             />
+                            </Grid>
           </AccordionDetails>
         </CustomAccordion>
                 </CustomCard>

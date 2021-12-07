@@ -9,6 +9,7 @@ import Dataset from './components/Dataset';
 import Method from './components/Method';
 import Compare from './components/Compare';
 import LandingPage from './components/LandingPage';
+import Footer from './components/Footer';
 
 class App extends React.Component {
   constructor(props){
@@ -43,6 +44,7 @@ class App extends React.Component {
                   <Route path="/Method/:method" element={<Method/>}></Route>
                   <Route path="/Compare" element={<Compare currentTheme={this.state.selectedTheme}/>}></Route>
                 </Routes>
+                <Footer/>
                 
           </MuiThemeProvider>
         </Router>
