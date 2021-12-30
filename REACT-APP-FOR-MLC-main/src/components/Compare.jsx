@@ -8,6 +8,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { ConstructionOutlined } from '@mui/icons-material';
 
 const http = require('http')
 
@@ -24,25 +25,41 @@ class Compare extends React.Component
             boxPlotData: [],
             boxPlotLayout: [],
             boxLoadingData: "flex",
+            boxEvaluationMeasure: "accuracy example-based",
+            boxValidationFold: false,
 
             violinValueList: [],
             violinPlotData: [],
             violinPlotLayout: [],
             violinLoadingData: "flex",
+            violinEvaluationMeasure: "accuracy example-based",
+            violinValidationFold: false,
 
             heatmapValueList: [],
             heatmapPlotData: [],
             heatmapPlotLayout: [],
             heatmapRanks: {},
             heatmapLoadingData: "flex",
+            heatmapEvaluationMeasure: "accuracy example-based",
+            heatmapValidationFold: false,
+
             radarDataset: "ABPM",
             radarMeasure: ['accuracy example-based'],
-            heatmpaMount: true,
+            radarValidationFold: false,
+
+            mountPlots: true,
 
             radarValueList: [],
             radarChartData: [],
             radarChartLayout: [],
             radarLoadingData: "flex",
+
+            rankingValueList: [],
+            rankingPlotData: [],
+            rankingPlotLayout: [],
+            rankingLoadingData: "flex",
+            rankingMeasure: 'accuracy example-based',
+            rankingValidationFold: false,
 
             reqURL: "http://semanticannotations.ijs.si:8890/sparql?default-graph-uri=http%3A%2F%2Flocalhost%3A8890%2FMLC&&Content-Type='application/json'&query=",
             evaluationMeasures: ['accuracy example-based', 'AUPRC', 'AUROC', 'average precision', 'coverage', 'F1-score example-based', 'hamming loss example-based', 'macro F1-score', 'macro precision', 'macro recall', 'micro F1-score', 'micro precision', 'micro recall', 'one error', 'precision example-based', 'ranking loss', 'recall example-based', 'subset accuracy', 'testing time', 'training time'],
@@ -74,7 +91,7 @@ class Compare extends React.Component
 	}
 
     // gets the names of the algorithms/methods
-	setUpQuery=(selectedMeasure, typeOfPlot)=>{
+	setUpQuery=(selectedMeasure, typeOfPlot, foldValidation)=>{
         var orderString = "";
         var filterString = ""; // for radar
         var newMeasures = ``;
@@ -98,42 +115,87 @@ class Compare extends React.Component
         {
             orderString = '?Algorithm ucase(?datasetLabel)'
             newMeasures = `"${selectedMeasure}"`
-        }
 
-
-		var query = `
-        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                
-        SELECT  ?Algorithm ?datasetLabel ?value ?evaluationMeasureClassLabel 
-        WHERE {
-        ?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
-        ?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
-        ?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
-        ?dataset rdfs:label ?datasetLabelArff .
-        ?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelingAlgorithmExecution.
-        ?predictiveModelingAlgorithmExecution <http://www.ontodm.com/OntoDM-core/ontoexp_0074> ?Algorithm .
-        ?predictiveModelTestSetEvaluationCalculation rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0064>.
-        ?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
-        ?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
-        ?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
-        ?evaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240>  ?value.
-        ?evaluationMeasure rdfs:label ?evaluationMeasure_label.
-        ?evaluationMeasure rdf:type ?evaluationMeasureClass .
-        ?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
-
-        MINUS {
-            ?oneFoldTestTwoFoldTrainDatasetAssigment ?precedes2 ?predictiveModelTrainTestEvaluationWorkflowExecution. 
-            ?oneFoldTestTwoFoldTrainDatasetAssigment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
+            if (typeOfPlot === "rankingPt2")
+            {
+                orderString = 'ucase(?datasetLabel) ?Algorithm'
             }
-
-        BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
-        Filter(?evaluationMeasureClassLabel in (${newMeasures}))
-        ${filterString}
         }
-        ORDER BY ${orderString}
-		`
 
+        if (!foldValidation)
+        {
+            var query = `
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    
+            SELECT  ?Algorithm ?datasetLabel ?value ?evaluationMeasureClassLabel 
+            WHERE {
+            ?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
+            ?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
+            ?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
+            ?dataset rdfs:label ?datasetLabelArff .
+            ?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelingAlgorithmExecution.
+            ?predictiveModelingAlgorithmExecution <http://www.ontodm.com/OntoDM-core/ontoexp_0074> ?Algorithm .
+            ?predictiveModelTestSetEvaluationCalculation rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0064>.
+            ?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
+            ?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
+            ?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
+            ?evaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240>  ?value.
+            ?evaluationMeasure rdfs:label ?evaluationMeasure_label.
+            ?evaluationMeasure rdf:type ?evaluationMeasureClass .
+            ?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
+
+            MINUS {
+                ?oneFoldTestTwoFoldTrainDatasetAssigment ?precedes2 ?predictiveModelTrainTestEvaluationWorkflowExecution. 
+                ?oneFoldTestTwoFoldTrainDatasetAssigment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
+                }
+
+            BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
+            Filter(?evaluationMeasureClassLabel in (${newMeasures}))
+            ${filterString}
+            }
+            ORDER BY ${orderString}
+            `
+        }
+        else
+        {
+            var query = `
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+					
+			SELECT ?Algorithm ?datasetLabel ?value ?NFoldEvaluationMeasureLabel 
+			WHERE {
+
+			?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
+			?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
+			?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
+			?dataset rdfs:label ?datasetLabelArff .
+			?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelingAlgorithmExecution.
+			?predictiveModelingAlgorithmExecution <http://www.ontodm.com/OntoDM-core/ontoexp_0074> ?Algorithm .
+			?predictiveModelTestSetEvaluationCalculation rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0064>.
+			?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
+			?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
+			?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
+			?evaluationMeasure <http://www.ontodm.com/OntoDM-core/ontoexp#has_input> ?NFoldEvaluationMeasure.
+
+			?evaluationMeasure rdfs:label ?evaluationMeasure_label.
+            ?evaluationMeasure rdf:type ?evaluationMeasureClass .
+
+			?evaluationMeasure rdfs:label ?evaluationMeasure_label.
+			?evaluationMeasure rdf:type ?evaluationMeasureClass .
+			?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
+			BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
+
+
+            ?NFoldEvaluationMeasure rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp#N_fold_evaluation_measure>.
+            ?NFoldEvaluationMeasure rdfs:label ?NFoldEvaluationMeasureLabel.
+            ?NFoldEvaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240> ?value.
+            Filter(?evaluationMeasureClassLabel in (${newMeasures}))
+            ${filterString}
+
+		    } GROUP BY ?NFoldEvaluationMeasureLabel
+            ORDER BY ${orderString}`
+        }
         this.getData(query, typeOfPlot)
 	}
 
@@ -144,14 +206,27 @@ class Compare extends React.Component
         var values = [];
         var subValues = [];
 
-        if (typeOfPlot === 'heatmap') // create a map of zeros
+        if (typeOfPlot === 'heatmap' || typeOfPlot === 'ranking' || typeOfPlot === 'rankingPt2') // create a map of zeros
         {
-            var maping = {}; // for heatmap
+            var maping = {};
             var ranks = {};
-            for (let i = 0; i < 28; i++)
+            for (let i = 0; i < this.state.algorithmList.length; i++)
             {
-                ranks[this.state.algorithmList[i]] = new Array(28).fill(0);
+                if (typeOfPlot !== 'rankingPt2')
+                {
+                    if (typeOfPlot === 'heatmap' && this.state.heatmapValidationFold)
+                    {
+                        ranks[this.state.algorithmList[i]] = new Array(159).fill(0);
+                    }
+                    else
+                        ranks[this.state.algorithmList[i]] = new Array(28).fill(0);
+                }
+                else
+                    ranks[this.state.algorithmList[i]] = new Array(40).fill(0);
             }
+
+            var mean = 0;
+            var median = []
         }
 
 		// post request
@@ -185,6 +260,58 @@ class Compare extends React.Component
                                 {
                                     var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
                                     ranks[this.state.algorithmList[j]][index] += 1;
+                                }
+                                
+                                subValues = [];
+                            }
+
+                            maping[result[1].split('</literal>')[0]] = result[3].split('</literal>')[0]
+                            subValues.push(result[3].split('</literal>')[0])
+                        }
+                        else if (typeOfPlot === 'ranking')
+                        {
+                            if (result[1].split('</literal>')[0] !== algorithms[algorithms.length-1])
+                            {
+                                // mean then rank
+                                for (let j = 0; j < subValues.length; j++)
+                                {
+                                    mean += parseFloat(subValues[j]);
+                                }
+                                
+                                mean /= subValues.length;
+                                values.push(mean);
+                                mean = 0;
+
+                                // median then rank
+                                if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                                {subValues = subValues.sort()}
+                                else{subValues = subValues.sort(function(a, b){return b-a});}
+                                var half = Math.floor(subValues.length / 2);
+                                if (values.length % 2 === 0)
+                                    {median.push(parseFloat(subValues[half]));}
+                                else {median.push((parseFloat(subValues[half - 1]) + parseFloat(subValues[half])) / 2.0);}
+
+                                console.log(subValues.length)
+                                subValues = [];
+
+                                algorithms.push(result[1].split('</literal>')[0]);
+                            }
+
+                            subValues.push(result[3].split('</literal>')[0])
+                        }
+                        else if (typeOfPlot === 'rankingPt2') // for rank then mean / median
+                        {
+                            if (result[2].split('</literal>')[0] !== datasets[datasets.length-1])
+                            {
+                                datasets.push(result[2].split('</literal>')[0]);
+                                if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                                {subValues = subValues.sort()} // lowest value is best
+                                else{subValues = subValues.sort(function(a, b){return b-a});} // highest value is best
+
+                                for (let j = 0; j < this.state.algorithmList.length; j++)
+                                {
+                                    var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
+                                    ranks[this.state.algorithmList[j]][datasets.length-1] = index + 1;
                                 }
                                 
                                 subValues = [];
@@ -243,9 +370,9 @@ class Compare extends React.Component
                                     var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
                                     ranks[this.state.algorithmList[j]][index] += 1;        
                                 }
-                            
+                        
                             this.setState({
-                            heatmapRanks: ranks
+                                heatmapRanks: ranks
                             },()=> {this.setUpHeatmapPlotData()});
                             return
 
@@ -257,6 +384,92 @@ class Compare extends React.Component
                                 radarValueList: values,
                             })
                             this.setUpRadarChartData();
+                            break;
+                        
+                        case 'ranking':
+                            //mean then rank
+                            for (let j = 0; j < subValues.length; j++)
+                            {
+                                mean += parseFloat(subValues[j]);
+                            }
+                            mean /= subValues.length;
+                            values.push(mean);
+                            values.shift();
+
+                            // median then rank
+                            if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                            {subValues = subValues.sort()}
+                            else{subValues = subValues.sort(function(a, b){return b-a});}
+                            var half = Math.floor(subValues.length / 2);
+                            if (subValues.length % 2 === 0)
+                                {median.push(parseFloat(subValues[half]));}
+                            else {median.push((parseFloat(subValues[half - 1]) + parseFloat(subValues[half])) / 2.0);}
+
+                            median.shift();
+                            var medianMaping = [];
+                            for (let i = 0; i < this.state.algorithmList.length; i++)
+                            {
+                                maping[this.state.algorithmList[i]] = values[i];
+                                medianMaping[this.state.algorithmList[i]] = median[i];
+                            }
+
+                            var allValues = new Array(28).fill(0);
+                            if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                            {values = values.sort();
+                                median = median.sort()}
+                            else{values = values.sort(function(a, b){return b-a});
+                                median = median.sort(function(a, b){return b-a});}
+
+
+                            for (let j = 0; j < this.state.algorithmList.length; j++)
+                            {
+                                var index = values.indexOf(maping[this.state.algorithmList[j]]);
+                                allValues[j] = [index + 1];
+                                index = median.indexOf(medianMaping[this.state.algorithmList[j]]);
+                                allValues[j].push(index + 1) 
+                            }
+
+                            this.setState({
+                                rankingValueList: allValues,
+                            })
+                            this.setUpQuery(this.state.rankingMeasure, "rankingPt2")
+                            break;
+
+                        case "rankingPt2":
+                            datasets.push(result[2].split('</literal>')[0]);
+                            if (["hamming loss example-based", "ranking loss", "one error", "training time", "testing time"].includes(result[4].split('</literal>')[0])) 
+                                {subValues = subValues.sort()} // lowest value is best
+                            else{subValues = subValues.sort(function(a, b){return b-a});} // highest value is best
+
+                            var allValues = this.state.rankingValueList;
+                                for (let j = 0; j < this.state.algorithmList.length; j++)
+                                {
+                                    var index = subValues.indexOf(maping[this.state.algorithmList[j]]);
+                                    ranks[this.state.algorithmList[j]][datasets.length-1] = index + 1;
+                                    ranks[this.state.algorithmList[j]].shift();
+
+
+                                    // median
+                                    var half = Math.floor(ranks[this.state.algorithmList[j]].length / 2);
+                                    if (ranks[this.state.algorithmList[j]].length % 2 === 0)
+                                        {median.push(parseFloat(ranks[this.state.algorithmList[j]][half]));}
+                                    else {median.push((parseFloat(ranks[this.state.algorithmList[j]][half - 1]) + parseFloat(ranks[this.state.algorithmList[j]][half])) / 2.0);}
+
+                                    allValues[j].push(median[j])
+
+                                    // mean
+                                    mean = 0;
+                                    for (let k = 0; k < ranks[this.state.algorithmList[j]].length; k++)
+                                    {
+                                        mean += ranks[this.state.algorithmList[j]][k];
+                                    }
+                                    mean /= ranks[this.state.algorithmList[j]].length;
+                                    mean = Math.ceil(mean) 
+                                    allValues[j].push(mean)
+                                }
+
+                            this.setState({rankingValueList: allValues})
+                            this.setUpRankingPlotData();
                             break;
                     }
 				});
@@ -290,7 +503,7 @@ class Compare extends React.Component
             thisData.push(result);
         };
 
-        const thisLayout =  { title: 'Boxplot',
+        const thisLayout =  {
         autosize: true,
         width: 1000,
         height: 600,
@@ -306,17 +519,17 @@ class Compare extends React.Component
         font: {
             color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
         },
-        showlegend: false
         }
 
-        if (this.state.heatmpaMount === true)
-            {this.setUpQuery('accuracy example-based', 'heatmap');}
+        if (this.state.mountPlots === true)
+            {this.setUpQuery('accuracy example-based', 'heatmap');
+            this.setUpQuery('accuracy example-based', 'ranking');}
 
         this.setState({
             boxPlotData: thisData,
             boxPlotLayout: thisLayout,
             boxLoadingData: "none",
-            heatmpaMount: false,
+            mountPlots: false,
         })
 
         this.render();
@@ -345,7 +558,6 @@ class Compare extends React.Component
         };
 
         const thisLayout = {
-            title: "Violin plot",
             width: 1000,
             height: 600,
             yaxis: {
@@ -356,7 +568,6 @@ class Compare extends React.Component
             font: {
                 color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
             },
-            showlegend: false
           };
 
         this.setState({
@@ -379,7 +590,6 @@ class Compare extends React.Component
           ];
 
         const thisLayout = {
-            title: "Heatmap",
             width: 1000,
             height: 600,
 
@@ -428,7 +638,7 @@ class Compare extends React.Component
             thisData.push(singleData);
         }
 
-        const thisLayout =  { title: 'Radar chart',
+        const thisLayout =  {
         autosize: true,
         width: 1000,
         height: 600,
@@ -455,20 +665,64 @@ class Compare extends React.Component
         })
     }
 
+    setUpRankingPlotData=()=>{
+        var thisData = [];
+        for ( var i = 0; i < this.state.algorithmList.length; i ++ ) {
+            //console.log(this.state.rankingValueList[i])
+            var result = {
+                mode: 'lines+markers',
+                type: 'scatter',
+                x: ["meanThenRank", "medianThenRank", "rankThenMedian", "rankThenMean"],
+                y: this.state.rankingValueList[i],
+                name: this.state.algorithmList[i],
+            };
+            thisData.push(result);
+        };
+
+        const thisLayout =  {
+        autosize: true,
+        width: 1000,
+        height: 600,
+
+        paper_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[2] : this.state.lightThemeColors[2],
+        plot_bgcolor: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[1] : this.state.lightThemeColors[1],
+        font: {
+            color: this.state.currentTheme === 'dark' ? this.state.darkThemeColors[4] : this.state.lightThemeColors[4],
+            },
+        }
+
+        this.setState({
+            rankingPlotData: thisData,
+            rankingPlotLayout: thisLayout,
+            rankingLoadingData: "none",
+        })
+
+        this.render();
+    }
+
     render()
     {
         return(
             <React.Fragment>
                 <CustomCard sx={{m:2}}> {/* box plot */}
-                <CustomAccordion TransitionProps={{ unmountOnExit: true }}>
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        aria-controls="panel1a-content"
-                        id="panel1a-header"
-                    >
-                        <Typography>Box plot</Typography>
-                    </AccordionSummary>
-                        <AccordionDetails>
+                    <CustomAccordion TransitionProps={{ unmountOnExit: true }}>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            aria-controls="panel1a-content"
+                            id="panel1a-header"
+                        >
+                            <Typography>Box plot</Typography>
+                        </AccordionSummary>
+                    <AccordionDetails>
+
+                        <Grid
+                            container
+                            spacing={0}
+                            direction="column"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+
                             <CustomAutocomplete
                                 defaultValue = {this.state.evaluationMeasures[0]}
                                 multiple = {false}							
@@ -480,86 +734,123 @@ class Compare extends React.Component
                                     <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
                                 }
                                 onChange={(event, value) => {
-                                    this.setState({boxLoadingData: "flex"});
-                                    this.setUpQuery(value, 'box');
+                                    this.setState({boxEvaluationMeasure: value, boxLoadingData: "flex"});
+                                    this.setUpQuery(this.state.boxEvaluationMeasure, 'box', this.state.boxValidationFold);
                                     }
-                                }/> 
+                                }/>
 
-                                <div style={{
-                                    display: this.state.boxLoadingData,
-                                    justifyContent: 'center',
-                                    }}>
-                                        <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
-                                            <CustomCircularProgress/>
-                                        </Box>
+                                <CustomAutocomplete // split input field
+                                    defaultValue = "train / test"
+                                    onChange={(event, value) => {
+                                        if (value === "folds")
+                                        {
+                                            this.setState({boxValidationFold: true, boxLoadingData: "flex"}, () =>
+                                            {this.setUpQuery(this.state.boxEvaluationMeasure, 'box', this.state.boxValidationFold);});
+                                        }
+                                        else
+                                        {
+                                            this.setState({boxValidationFold: false, boxLoadingData: "flex"}, () =>
+                                            {this.setUpQuery(this.state.boxEvaluationMeasure, 'box', this.state.boxValidationFold);});
+                                        }
+                                    }}
+                                    multiple = {false}								
+                                    limitTags={2}
+                                    options={["folds", "train / test"]}
+                                    sx={{width: 300, m: 1}}
+                                    PaperComponent={CustomPaper}
+                                    renderInput={(params) => 
+                                    <TextField {...params} variant='outlined' label = "Validation" color='secondary' />
+                                    }
+                                />
+
+                                <div style={{display: this.state.boxLoadingData}}>
+                                    <Box sx={{ display: 'flex', mt: 2, mb: 2}}>
+                                        <CustomCircularProgress/>
+                                    </Box>
                                 </div>
 
-                                <Grid
-                                    container
-                                    spacing={0}
-                                    direction="column"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    >
-                                        <Plot
-                                            data ={this.state.boxPlotData}
-                                            layout={this.state.boxPlotLayout}
-                                        />
-                                </Grid>
+                                <Plot
+                                    data ={this.state.boxPlotData}
+                                    layout={this.state.boxPlotLayout}
+                                />
+                            </Grid>
                         </AccordionDetails>
                     </CustomAccordion>
                 </CustomCard>
 
                 <CustomCard sx={{m:2}}> {/* violin plot */}
-                            <CustomAccordion>
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    aria-controls="panel1a-content"
-                                    id="panel1a-header"
-                                >
-                                    <Typography>Violin plot</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
+                    <CustomAccordion>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            aria-controls="panel1a-content"
+                            id="panel1a-header"
+                        >
+                            <Typography>Violin plot</Typography>
+                        </AccordionSummary>
+                    <AccordionDetails>
                        
-                            <CustomAutocomplete
-                                defaultValue = {this.state.evaluationMeasures[0]}
-                                multiple = {false}							
-                                limitTags={50}
-                                options={this.state.evaluationMeasures}
-                                sx={{width: 300, m: 2}}
+                        <Grid
+                            container
+                            spacing={0}
+                            direction="column"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+
+                        <CustomAutocomplete
+                            defaultValue = {this.state.evaluationMeasures[0]}
+                            multiple = {false}							
+                            limitTags={50}
+                            options={this.state.evaluationMeasures}
+                            sx={{width: 300, m: 2}}
+                            PaperComponent={CustomPaper}
+                            renderInput={(params) => 
+                                <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
+                            }
+                            onChange={(event, value) => {
+                                this.setState({violinEvaluationMeasure: value, violinLoadingData: "flex"});
+                                    this.setUpQuery(this.state.violinEvaluationMeasure, 'violin', this.state.violinValidationFold);
+                                }
+                            }/> 
+
+                            <CustomAutocomplete // split input field
+                                defaultValue = "train / test"
+                                onChange={(event, value) => {
+                                    if (value === "folds")
+                                    {
+                                        this.setState({violinValidationFold: true, violinLoadingData: "flex"}, () =>
+                                        {this.setUpQuery(this.state.violinEvaluationMeasure, 'violin', this.state.violinValidationFold);});
+                                    }
+                                    else
+                                    {
+                                        this.setState({violinValidationFold: false, violinLoadingData: "flex"}, () =>
+                                        {this.setUpQuery(this.state.violinEvaluationMeasure, 'violin', this.state.violinValidationFold);});
+                                    }
+                                }}
+                                multiple = {false}								
+                                limitTags={2}
+                                options={["folds", "train / test"]}
+                                sx={{width: 300, m: 1}}
                                 PaperComponent={CustomPaper}
                                 renderInput={(params) => 
-                                    <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
+                                <TextField {...params} variant='outlined' label = "Validation" color='secondary' />
                                 }
-                                onChange={(event, value) => {
-                                    this.setState({violinLoadingData: "flex"});
-                                    this.setUpQuery(value, 'violin');
-                                    }
-                                }/> 
+                            />
 
-                                <div style={{
-                                    display: this.state.violinLoadingData,
-                                    justifyContent: 'center',
-                                    }}>
-                                        <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
-                                            <CustomCircularProgress/>
-                                        </Box>
-                                </div>
+                            <div style={{
+                                display: this.state.violinLoadingData}}>
+                                <Box sx={{ display: 'flex', mt: 2, mb: 2}}>
+                                    <CustomCircularProgress/>
+                                </Box>
+                            </div>
 
-                                <Grid
-                                    container
-                                    spacing={0}
-                                    direction="column"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    >
                             <Plot
                                 data ={this.state.violinPlotData}
                                 layout={this.state.violinPlotLayout}
                             />
                             </Grid>
-                                      </AccordionDetails>
-                            </CustomAccordion>
+                        </AccordionDetails>
+                    </CustomAccordion>
                 </CustomCard>
                                 
                 <CustomCard sx={{m:2}}> {/* heatmap */}
@@ -572,57 +863,97 @@ class Compare extends React.Component
                         <Typography>Heatmap</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                            <CustomAutocomplete
-                                defaultValue = {this.state.evaluationMeasures[0]}
-                                multiple = {false}							
-                                limitTags={50}
-                                options={this.state.evaluationMeasures}
-                                sx={{width: 300, m: 2}}
+                        <Grid
+                            container
+                            spacing={0}
+                            direction="column"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+
+                        <CustomAutocomplete
+                            defaultValue = {this.state.evaluationMeasures[0]}
+                            multiple = {false}							
+                            limitTags={50}
+                            options={this.state.evaluationMeasures}
+                            sx={{width: 300, m: 2}}
+                            PaperComponent={CustomPaper}
+                            renderInput={(params) => 
+                            <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
+                            }
+                            onChange={(event, value) => {
+                                this.setState({heatmapEvaluationMeasure: value, heatmapLoadingData: "flex"});
+                                this.setUpQuery(this.state.heatmapEvaluationMeasure, 'heatmap', this.state.heatmapValidationFold);
+                                }
+                            }/>
+
+                            <CustomAutocomplete // split input field
+                                defaultValue = "train / test"
+                                onChange={(event, value) => {
+                                    if (value === "folds")
+                                    {
+                                        this.setState({heatmapValidationFold: true, heatmapLoadingData: "flex"}, () =>
+                                        {this.setUpQuery(this.state.heatmapEvaluationMeasure, 'heatmap', this.state.heatmapValidationFold);});
+                                    }
+                                    else
+                                    {
+                                        this.setState({heatmapValidationFold: false, heatmapLoadingData: "flex"}, () =>
+                                        {this.setUpQuery(this.state.heatmapEvaluationMeasure, 'heatmap', this.state.heatmapValidationFold);});
+                                    }
+                                }}
+                                multiple = {false}								
+                                limitTags={2}
+                                options={["folds", "train / test"]}
+                                sx={{width: 300, m: 1}}
                                 PaperComponent={CustomPaper}
                                 renderInput={(params) => 
-                                    <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
+                                <TextField {...params} variant='outlined' label = "Validation" color='secondary' />
                                 }
-                                onChange={(event, value) => {
-                                    this.setState({heatmapLoadingData: "flex"});
-                                    this.setUpQuery(value, 'heatmap');
-                                    }
-                                }/> 
+                            />
 
-                                <div style={{
-                                    display: this.state.heatmapLoadingData,
-                                    justifyContent: 'center',
-                                    }}>
-                                        <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
-                                            <CustomCircularProgress/>
-                                        </Box>
-                                </div>
+                            <div style={{
+                                display: this.state.heatmapLoadingData}}>
+                                    <Box sx={{ display: 'flex', mt: 2, mb: 2}}>
+                                        <CustomCircularProgress/>
+                                    </Box>
+                            </div>
 
-                                <Grid
-                                    container
-                                    spacing={0}
-                                    direction="column"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    >
                             <Plot
                                 data ={this.state.heatmapPlotData}
                                 layout={this.state.heatmapPlotLayout}
                             />
                             </Grid>
-          </AccordionDetails>
-        </CustomAccordion>
+                        </AccordionDetails>
+                    </CustomAccordion>
                 </CustomCard>
 
                 <CustomCard sx={{m:2}}> {/* radar chart */}
                 <CustomAccordion>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1a-content"
-            id="panel1a-header"
-          >
-            <Typography>Radar chart</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
+                    <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        aria-controls="panel1a-content"
+                        id="panel1a-header"
+                    >
+                        <Typography>Radar chart</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <div style={{
+                            display: this.state.radarLoadingData,
+                            justifyContent: 'center',
+                        }}>
+                            <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
+                                <CustomCircularProgress/>
+                            </Box>
+                        </div>
+
+                        <Grid
+                            container
+                            spacing={0}
+                            direction="column"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+
                             <CustomAutocomplete
                                 defaultValue = {"ABPM"}
                                 multiple = {false}							
@@ -634,7 +965,7 @@ class Compare extends React.Component
                                     <TextField {...params} variant='outlined' label = {"Dataset"} color='secondary' />
                                 }
                                 onChange={(event, value) => {
-                                    this.setState({radarLoadingData: "flex", radarDataset: value}, () => {this.setUpQuery(this.state.radarMeasure, 'radar');});
+                                    this.setState({radarLoadingData: "flex", radarDataset: value}, () => {this.setUpQuery(this.state.radarMeasure, 'radar', this.state.radarValidationFold);});
                                     }
                                 }/> 
 
@@ -649,28 +980,35 @@ class Compare extends React.Component
                                     <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
                                 }
                                 onChange={(event, value) => {
-                                    this.setState({radarLoadingData: "flex", radarMeasure: value});
-                                    this.setUpQuery(value, 'radar');
+                                    this.setState({radarLoadingData: "flex", radarMeasure: value},()=>{
+                                    this.setUpQuery(this.state.radarMeasure, 'radar', this.state.radarValidationFold);});
                                     }
-                                }/> 
+                                }/>
 
+                                <CustomAutocomplete // split input field
+                                    defaultValue = "train / test"
+                                    onChange={(event, value) => {
+                                        if (value === "folds")
+                                        {
+                                            this.setState({radarValidationFold: true, radarLoadingData: "flex"}, () =>
+                                            {this.setUpQuery(this.state.radarMeasure, 'radar', this.state.radarValidationFold);});
+                                        }
+                                        else
+                                        {
+                                            this.setState({radarValidationFold: false, radarLoadingData: "flex"}, () =>
+                                            {this.setUpQuery(this.state.radarMeasure, 'radar', this.state.radarValidationFold);});
+                                        }
+                                    }}
+                                    multiple = {false}								
+                                    limitTags={2}
+                                    options={["folds", "train / test"]}
+                                    sx={{width: 300, m: 2,}}
+                                    PaperComponent={CustomPaper}
+                                    renderInput={(params) => 
+                                    <TextField {...params} variant='outlined' label = "Validation" color='secondary' />
+                                    }
+                                />          
 
-                                <div style={{
-                                    display: this.state.radarLoadingData,
-                                    justifyContent: 'center',
-                                    }}>
-                                        <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
-                                            <CustomCircularProgress/>
-                                        </Box>
-                                </div>
-
-                                <Grid
-                                    container
-                                    spacing={0}
-                                    direction="column"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    >
                             <Plot
                                 data ={this.state.radarChartData}
                                 layout={this.state.radarChartLayout}
@@ -678,8 +1016,83 @@ class Compare extends React.Component
                             </Grid>
           </AccordionDetails>
         </CustomAccordion>
+        </CustomCard>
+
+        <CustomCard sx={{m:2}}> {/* ranking plot */}
+                <CustomAccordion TransitionProps={{ unmountOnExit: true }}>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            aria-controls="panel1a-content"
+                            id="panel1a-header"
+                        >
+                            <Typography>Ranking methods</Typography>
+                        </AccordionSummary>
+                    <AccordionDetails>
+
+                        <Grid
+                            container
+                            spacing={0}
+                            direction="column"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+
+                            <CustomAutocomplete
+                                defaultValue = {this.state.evaluationMeasures[0]}
+                                multiple = {false}							
+                                limitTags={50}
+                                options={this.state.evaluationMeasures}
+                                sx={{width: 300, m: 2}}
+                                PaperComponent={CustomPaper}
+                                renderInput={(params) => 
+                                    <TextField {...params} variant='outlined' label = {"Evaluation measure"} color='secondary' />
+                                }
+                                onChange={(event, value) => {
+                                    this.setState({rankingLoadingData: "flex", rankingMeasure: value});
+                                    this.setUpQuery(this.state.rankingMeasure, 'ranking', this.state.rankingValidationFold);
+                                    }
+                                }/> 
+
+                                <CustomAutocomplete // split input field
+                                    defaultValue = "train / test"
+                                    onChange={(event, value) => {
+                                        if (value === "folds")
+                                        {
+                                            this.setState({rankingValidationFold: true, rankingLoadingData: "flex"}, () =>
+                                            {this.setUpQuery(this.state.rankingMeasure, 'ranking', this.state.rankingValidationFold);});
+                                        }
+                                        else
+                                        {
+                                            this.setState({rankingValidationFold: false, rankingLoadingData: "flex"}, () =>
+                                            {this.setUpQuery(this.state.rankingMeasure, 'ranking', this.state.rankingValidationFold);});
+                                        }
+                                    }}
+                                    multiple = {false}								
+                                    limitTags={2}
+                                    options={["folds", "train / test"]}
+                                    sx={{width: 300, m: 2,}}
+                                    PaperComponent={CustomPaper}
+                                    renderInput={(params) => 
+                                    <TextField {...params} variant='outlined' label = "Validation" color='secondary' />
+                                    }
+                                />              
+
+                                <div style={{display: this.state.rankingLoadingData}}>
+                                    <Box sx={{ display: 'flex', mt: 1, mb: 2}}>
+                                        <CustomCircularProgress/>
+                                    </Box>
+                                </div>
+
+                                <Plot
+                                    data ={this.state.rankingPlotData}
+                                    layout={this.state.rankingPlotLayout}
+                                />
+                            </Grid>
+                        </AccordionDetails>
+                    </CustomAccordion>
                 </CustomCard>
 
+                <CustomPaper sx={{m:10}}></CustomPaper>
             </React.Fragment>
         )
     }

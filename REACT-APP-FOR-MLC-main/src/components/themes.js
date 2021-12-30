@@ -7,7 +7,7 @@ import MuiAccordion from '@mui/material/Accordion';
 import {Link} from 'react-router-dom';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { color } from "@mui/system";
+import {GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
 
 // 0: header   1: body  2: pannels  3: highlight  4: text    5: error
 const darkThemeColors = ['#082032', '#2C394B', '#7c848f', '#FB9300', '#fff', '#ff6666'];
@@ -313,13 +313,43 @@ export const CustomAccordion = styled((props) => (
 }));
 
 // link
-export const CustomLink = styled(Link)(({}) => ({
-  color: currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+export const CustomLink = styled(Link)(({selected}) => ({
+  color: selected === true ? darkThemeColors[3] : currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
   textDecoration: "none"
 }));
 
 // menus
-export const CustomMenuItem = styled(MenuItem)(({}) => ({
-  fill: "red",
-  backgroundColor : currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+export const CustomMenu = styled(Menu)(({}) => ({
+  '.MuiList-root':{
+    color : currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+    
+    backgroundColor: currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+  },
+  '.MuiMenuItem-root':{
+    color : currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+    
+    backgroundColor: currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+  },
+}));
+
+// button
+export const CustomButton = styled(Button)(({selected}) => ({
+  color: selected === true ? darkThemeColors[3] : currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+  //backgroundColor : currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+}));
+
+// GridToolbarExport
+export const CustomGridToolbarExport = styled(GridToolbarExport)(({}) => ({
+  '.MuiList-root':{
+    '.MuiPaper-root':{
+    color : currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+    
+    backgroundColor: currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+    }
+  },
+  '.MuiMenuItem-root':{
+    color : currentTheme === 'dark' ? darkThemeColors[4] : lightThemeColors[4],
+    
+    backgroundColor: currentTheme === 'dark' ? darkThemeColors[1] : lightThemeColors[1],
+  },
 }));

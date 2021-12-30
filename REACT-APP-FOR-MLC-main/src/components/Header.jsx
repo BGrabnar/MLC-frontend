@@ -5,13 +5,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import {MaterialUISwitch} from './themes.js'
 import PatternIcon from '@mui/icons-material/Pattern';
 import Button from '@mui/material/Button';
-import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Fade from '@mui/material/Fade';
-import {CustomLink, CustomMenuItem} from './themes.js';
+import {CustomLink, CustomMenuItem, CustomButton, CustomMenu} from './themes.js';
 
   	//menu list
-	function FadeMenu() {
+	function FadeMenu(props) {
 		const [anchorEl, setAnchorEl] = React.useState(null);
 		const open = Boolean(anchorEl);
 		const handleClick = (event) => {
@@ -23,17 +22,18 @@ import {CustomLink, CustomMenuItem} from './themes.js';
 	  
 		return (
 		  <div>
-			<Button
+			<CustomButton
 			  id="fade-button"
 			  aria-controls="fade-menu"
 			  aria-haspopup="true"
 			  aria-expanded={open ? 'true' : undefined}
 			  onClick={handleClick}
 			  sx = {{m:1.5}}
+			  selected={props.browse}
 			>
 			  Browse
-			</Button>
-			<Menu
+			</CustomButton>
+			<CustomMenu
 			  id="fade-menu"
 			  MenuListProps={{
 				'aria-labelledby': 'fade-button',
@@ -43,18 +43,38 @@ import {CustomLink, CustomMenuItem} from './themes.js';
 			  onClose={handleClose}
 			  TransitionComponent={Fade}
 			>
-			  <CustomMenuItem onClick={handleClose}><Typography><CustomLink to='/Experiments'>Experiments</CustomLink></Typography></CustomMenuItem>
-			  <CustomMenuItem onClick={handleClose}><Typography><CustomLink to='/Dataset'>Datasets</CustomLink></Typography></CustomMenuItem>
-			  <CustomMenuItem onClick={handleClose}><Typography><CustomLink to='/Method'>Methods</CustomLink></Typography></CustomMenuItem>
-			</Menu>
+			  <MenuItem onClick={handleClose}><CustomLink to='/Experiments' >Experiments</CustomLink></MenuItem>
+			  <MenuItem onClick={handleClose}><CustomLink to='/Datasets'>Datasets</CustomLink></MenuItem>
+			  <MenuItem onClick={handleClose}><CustomLink to='/Methods'>Methods</CustomLink></MenuItem>
+			</CustomMenu>
 		  </div>
 		);
 	}
 
 class Header extends React.Component {
+	constructor(props) {
+    	super(props);
+		this.state = {
+			url: props.url,
+			compare: false,
+			browse: false,
+    	}
+  	}
+
 	ToggleTheme = (theme) => {
         this.props.callback(theme);
     }
+
+	componentDidMount() {
+		this.interval = setInterval(() => {
+			if (window.location.pathname === "/Compare")
+				{this.setState({compare: true, browse: false}, () => {this.render();} )}
+			else if (window.location.pathname === "/")
+				{this.setState({compare: false, browse: false}, () => {this.render();} )}
+			else
+				{this.setState({compare: false, browse: true}, () => {this.render();} )}
+			}, 250);
+	  }
 
   	render() {
 		return (
@@ -73,9 +93,9 @@ class Header extends React.Component {
 									</Typography>
 								</Box>
 							</CustomLink>
-							<Grid container justify="flex-end">
-									<FadeMenu/>
-									<Button><CustomLink to="/Compare">COMPARE</CustomLink> </Button>
+							<Grid container justifyContent="flex-end">
+									<FadeMenu browse={this.state.browse}/>
+									<Button><CustomLink to="/Compare" selected={this.state.compare}>COMPARE</CustomLink> </Button>
 								</Grid>
 							</Box>
 							

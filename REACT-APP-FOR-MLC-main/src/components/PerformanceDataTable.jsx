@@ -1,5 +1,5 @@
 import React from 'react';
-import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon, CustomLink} from './themes.js';
+import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon, CustomLink, CustomGridToolbarExport, CustomPaper} from './themes.js';
 import {Box} from '@mui/material';
 import {GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
 
@@ -9,7 +9,7 @@ const http = require('http')
 function MyExportButton() {
 	return (
 	  <GridToolbarContainer>						
-			<GridToolbarExport color='secondary' variant='contained' style={{marginBottom:5}}/>
+			<CustomGridToolbarExport color='secondary' variant='contained' style={{marginBottom:5}}/>
 	  </GridToolbarContainer>
 	);
   }
@@ -381,21 +381,22 @@ where {
 					</Box>
 				</div>
 
-            <div style={{ height: 650, width: '99%', marginBottom: 15}}>
-				<Box sx={{ml:1.5, mt:1.5, height: 650}}>
+            <div style={{ height: 1000, width: '99%', marginBottom: 15}}>
+				<Box sx={{ml:1.5, mt:1.5}} style={{height: '100%'}}>
 					<CustomDataGrid
 						rows={this.state.spreadSheetRows}
 						columns={this.state.spreadSheetColumns}
-						pageSize={10}
-						rowsPerPageOptions={[10]}
+						
+						
 						disableColumnMenu={true}
-						onRowClick = {(data) => console.log(data['row'])} // log row data
+						//onRowClick = {(data) => console.log(data['row'])} // log row data
 						components={{
 							Toolbar: MyExportButton,
 						  }}
 					/>
 				</Box>
             </div>
+			<CustomPaper sx={{m:10}}></CustomPaper>
 			</React.Fragment>
         );
     }
