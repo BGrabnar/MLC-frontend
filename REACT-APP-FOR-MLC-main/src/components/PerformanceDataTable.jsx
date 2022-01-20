@@ -1,18 +1,10 @@
 import React from 'react';
-import {CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon, CustomLink, CustomGridToolbarExport, CustomPaper} from './themes.js';
-import {Box} from '@mui/material';
-import {GridToolbarExport, GridToolbarContainer} from '@material-ui/data-grid';
+import {AntSwitch, CustomCircularProgress, CustomDataGrid, CustomTooltip, CustomAddIcon, CustomLink, CustomGridToolbarExport, CustomPaper} from './themes.js';
+import {Box, FormControlLabel} from '@mui/material';
+import {GridToolbarContainer} from '@material-ui/data-grid';
 
 
 const http = require('http')
-
-function MyExportButton() {
-	return (
-	  <GridToolbarContainer>						
-			<CustomGridToolbarExport color='secondary' variant='contained' style={{marginBottom:5}}/>
-	  </GridToolbarContainer>
-	);
-  }
 
 class PerformanceDataTable extends React.Component
 {
@@ -31,7 +23,10 @@ class PerformanceDataTable extends React.Component
             evaluationMeasureList: props.evaluationMeasureList,
             validationFolds: props.validationFolds,
 			loadingData: "flex",
-
+			aggregatedValues: false,
+			showAggreagateSwitch: "none",
+			aggregatedChecked: false,
+			
 			hideDatasetColumn: props.hideDatasetColumn,
 			hideAlgorithmColumn: props.hideAlgorithmColumn,
         };
@@ -54,6 +49,8 @@ class PerformanceDataTable extends React.Component
 			evaluationMeasureList: this.props.evaluationMeasureList,
 			loadingData: "flex"
     	},() => {
+			if (this.state.validationFolds){this.setState({showAggreagateSwitch: "flex"})}
+			else {this.setState({showAggreagateSwitch: "none"})}
 			this.getDataFromQuery()});
         
 	}
@@ -195,8 +192,15 @@ class PerformanceDataTable extends React.Component
 							subList['parameters'] = str;
 
 							// fold
-							var fold = result[6].split('</literal>')[0];
-							subList['fold'] = fold.substr(fold.length-11, 1);
+							if (!this.state.aggregatedValues)
+							{
+								var fold = result[6].split('</literal>')[0];
+								subList['fold'] = fold.substr(fold.length-11, 1);
+							}
+							else 
+							{
+								subList['fold'] = "1, 2, 3";
+							}
 						}
 						
 						list.push(subList);
@@ -274,65 +278,66 @@ class PerformanceDataTable extends React.Component
 				filterString += ']")).'
 		}
 
+		
 		if (!this.state.validationFolds)
 		{
-			var query = `
-			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-					
-			SELECT ?datasetLabel ?Algorithm (group_concat( concat(?evaluationMeasureClassLabel , ":", ?value) ;separator=";") as ?EvaluationMeasures) ?model
-			WHERE {
-select *
-where {
-			?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
-			?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
-			?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
-			?dataset rdfs:label ?datasetLabelArff .
-			?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelingAlgorithmExecution.
-			?predictiveModelingAlgorithmExecution <http://www.ontodm.com/OntoDM-core/ontoexp_0074> ?Algorithm .
-			?predictiveModelTestSetEvaluationCalculation rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0064>.
-			?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
-			?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
-			?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
-			?evaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240>  ?value.
-			?evaluationMeasure rdfs:label ?evaluationMeasure_label.
-			?evaluationMeasure rdf:type ?evaluationMeasureClass .
-			?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
+				var query = `
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+						
+				SELECT ?datasetLabel ?Algorithm (group_concat( concat(?evaluationMeasureClassLabel , ":", ?value) ;separator=";") as ?EvaluationMeasures) ?model
+				WHERE {
+				select *
+				where {
+				?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
+				?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
+				?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
+				?dataset rdfs:label ?datasetLabelArff .
+				?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelingAlgorithmExecution.
+				?predictiveModelingAlgorithmExecution <http://www.ontodm.com/OntoDM-core/ontoexp_0074> ?Algorithm .
+				?predictiveModelTestSetEvaluationCalculation rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0064>.
+				?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
+				?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
+				?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
+				?evaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240>  ?value.
+				?evaluationMeasure rdfs:label ?evaluationMeasure_label.
+				?evaluationMeasure rdf:type ?evaluationMeasureClass .
+				?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
 
-			?predictiveModelTrainTestEvaluationWorkflowExecution ?hasPart ?predictiveModelingAlgorithmExecution.
-?predictiveModelingAlgorithmExecution <http://purl.obolibrary.org/obo/OBI_0000299> ?predictiveModel.
-?predictiveModel <http://www.ontodm.com/OntoDM-core/ontoexp_0072> ?model.
+				?predictiveModelTrainTestEvaluationWorkflowExecution ?hasPart ?predictiveModelingAlgorithmExecution.
+				?predictiveModelingAlgorithmExecution <http://purl.obolibrary.org/obo/OBI_0000299> ?predictiveModel.
+				?predictiveModel <http://www.ontodm.com/OntoDM-core/ontoexp_0072> ?model.
 
-MINUS {
-	?oneFoldTestTwoFoldTrainDatasetAssigment ?precedes2 ?predictiveModelTrainTestEvaluationWorkflowExecution. 
-	?oneFoldTestTwoFoldTrainDatasetAssigment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
-	}
+				MINUS {
+				?oneFoldTestTwoFoldTrainDatasetAssigment ?precedes2 ?predictiveModelTrainTestEvaluationWorkflowExecution. 
+				?oneFoldTestTwoFoldTrainDatasetAssigment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
+				}
 
-			BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
-			${filterString}
-} order by (lcase(?evaluationMeasureClassLabel)) 
-			}
-			GROUP BY ?datasetLabel ?Algorithm ?model
-			ORDER BY ?datasetLabel ?Algorithm
-			`
+				BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
+				${filterString}
+				} order by (lcase(?evaluationMeasureClassLabel)) 
+				}
+				GROUP BY ?datasetLabel ?Algorithm ?model
+				ORDER BY ?datasetLabel ?Algorithm
+				`
 		}
 		else
 		{
-			query = `
-			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-					
+			if (this.state.aggregatedValues)
+		{
+			query = `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>		
 			SELECT ?datasetLabel ?Algorithm (group_concat( concat(?evaluationMeasureClassLabel , ":", ?value) ;separator=";") as ?EvaluationMeasures) ?model ?TunedParameters ?Fold
 			WHERE {
-				select *
-where {
-				?foldTestFoldTrainDatasetAssignment <http://www.obofoundry.org/ro/ro.owl#precedes> ?predictiveModelTrainTestEvaluationWorkflowExecution .
-				?foldTestFoldTrainDatasetAssignment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
-				?foldTestFoldTrainDatasetAssignment ?hasSpecifiedOutput ?foldTest.
-				?foldTest rdf:type <http://www.ontodm.com/OntoDM-core/OntoDM_000144>.
-				?foldTest rdfs:label ?Fold.
-
-
+			select *
+			where {
+			?foldTestFoldTrainDatasetAssignment <http://www.obofoundry.org/ro/ro.owl#precedes> ?predictiveModelTrainTestEvaluationWorkflowExecution .
+					?foldTestFoldTrainDatasetAssignment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
+					?foldTestFoldTrainDatasetAssignment ?hasSpecifiedOutput ?foldTest.
+					?foldTest rdf:type <http://www.ontodm.com/OntoDM-core/OntoDM_000144>.
+					?foldTest rdfs:label ?Fold.
+			
+			
 			?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
 			?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
 			?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
@@ -343,26 +348,76 @@ where {
 			?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
 			?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
 			?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
-			?evaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240>  ?value.
-
+			?evaluationMeasure <http://www.ontodm.com/OntoDM-core/ontoexp#has_input> ?NFoldEvaluationMeasure.
+			
+						?NFoldEvaluationMeasure rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp#N_fold_evaluation_measure>.
+						?NFoldEvaluationMeasure rdfs:label ?NFoldEvaluationMeasureLabel.
+						?NFoldEvaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240> ?value.
+			
 			?evaluationMeasure rdfs:label ?evaluationMeasure_label.
-?evaluationMeasure rdf:type ?evaluationMeasureClass .
+			?evaluationMeasure rdf:type ?evaluationMeasureClass .
 ?predictiveModelTrainTestEvaluationWorkflowExecution rdfs:label ?TunedParameters.
-
-?predictiveModelingAlgorithmExecution <http://purl.obolibrary.org/obo/OBI_0000299> ?predictiveModel.
-?predictiveModel <http://www.ontodm.com/OntoDM-core/ontoexp_0072> ?model.
-
+			
+			?predictiveModelingAlgorithmExecution <http://purl.obolibrary.org/obo/OBI_0000299> ?predictiveModel.
+			?predictiveModel <http://www.ontodm.com/OntoDM-core/ontoexp_0072> ?model.
+			
 			?evaluationMeasure rdfs:label ?evaluationMeasure_label.
 			?evaluationMeasure rdf:type ?evaluationMeasureClass .
 			?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
 			BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
-			FILTER (regex(?Fold, "test")).
-			${filterString}
-		} order by (lcase(?evaluationMeasureClassLabel)) 
+FILTER (regex(?Fold, "1_test")).
+${filterString}
+			} order by (lcase(?evaluationMeasureClassLabel))}
+			GROUP BY ?datasetLabel ?Algorithm ?model ?TunedParameters ?Fold
+			ORDER BY ?datasetLabel ?Algorithm`
+		}
+		else {
+				query = `
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+						
+				SELECT ?datasetLabel ?Algorithm (group_concat( concat(?evaluationMeasureClassLabel , ":", ?value) ;separator=";") as ?EvaluationMeasures) ?model ?TunedParameters ?Fold
+				WHERE {
+					select *
+				where {
+					?foldTestFoldTrainDatasetAssignment <http://www.obofoundry.org/ro/ro.owl#precedes> ?predictiveModelTrainTestEvaluationWorkflowExecution .
+					?foldTestFoldTrainDatasetAssignment rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0068>.
+					?foldTestFoldTrainDatasetAssignment ?hasSpecifiedOutput ?foldTest.
+					?foldTest rdf:type <http://www.ontodm.com/OntoDM-core/OntoDM_000144>.
+					?foldTest rdfs:label ?Fold.
+
+
+				?trainTestDatasetAssignment <http://purl.obolibrary.org/obo/OBI_0000293> ?dataset.
+				?trainTestDatasetAssignment ?precedes ?predictiveModelTrainTestEvaluationWorkflowExecution .
+				?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelTestSetEvaluationCalculation.
+				?dataset rdfs:label ?datasetLabelArff .
+				?predictiveModelTrainTestEvaluationWorkflowExecution <http://purl.obolibrary.org/obo/BFO_0000051> ?predictiveModelingAlgorithmExecution.
+				?predictiveModelingAlgorithmExecution <http://www.ontodm.com/OntoDM-core/ontoexp_0074> ?Algorithm .
+				?predictiveModelTestSetEvaluationCalculation rdf:type <http://www.ontodm.com/OntoDM-core/ontoexp_0064>.
+				?predictiveModelTestSetEvaluationCalculation <http://purl.obolibrary.org/obo/BFO_0000051> ?evaluationMeasuresCalculation.
+				?evaluationMeasuresCalculation ?realizes ?predictiveModelingEvaluationCalculationImplementation.
+				?predictiveModelingEvaluationCalculationImplementation ?isConcretizationOf ?evaluationMeasure.
+				?evaluationMeasure <http://www.ontodm.com/OntoDT#OntoDT_0000240>  ?value.
+
+				?evaluationMeasure rdfs:label ?evaluationMeasure_label.
+				?evaluationMeasure rdf:type ?evaluationMeasureClass .
+				?predictiveModelTrainTestEvaluationWorkflowExecution rdfs:label ?TunedParameters.
+
+				?predictiveModelingAlgorithmExecution <http://purl.obolibrary.org/obo/OBI_0000299> ?predictiveModel.
+				?predictiveModel <http://www.ontodm.com/OntoDM-core/ontoexp_0072> ?model.
+
+				?evaluationMeasure rdfs:label ?evaluationMeasure_label.
+				?evaluationMeasure rdf:type ?evaluationMeasureClass .
+				?evaluationMeasureClass rdfs:label ?evaluationMeasureClassLabel .
+				BIND(REPLACE(?datasetLabelArff , ".arff", "")  AS ?datasetLabel ).
+				FILTER (regex(?Fold, "test")).
+				${filterString}
+				} order by (lcase(?evaluationMeasureClassLabel)) 
+				}
+				GROUP BY ?datasetLabel ?Algorithm ?model ?TunedParameters ?Fold 
+				ORDER BY ?datasetLabel ?Algorithm ?Fold
+				`
 			}
-			GROUP BY ?datasetLabel ?Algorithm ?model ?TunedParameters ?Fold 
-			ORDER BY ?datasetLabel ?Algorithm ?Fold
-			`
 		}
 		console.log(query)
 		this.getColumnsAndRows(query)
@@ -391,7 +446,28 @@ where {
 						disableColumnMenu={true}
 						//onRowClick = {(data) => console.log(data['row'])} // log row data
 						components={{
-							Toolbar: MyExportButton,
+							Toolbar: () => {
+								return (
+								  <GridToolbarContainer>						
+										<CustomGridToolbarExport color='secondary' variant='contained' style={{marginBottom:5}}/>
+											<CustomTooltip title={"Explanation here!"}><span>{
+												<FormControlLabel sx={{mb:0.5, display: this.state.showAggreagateSwitch}} control={
+															<AntSwitch sx = {{ml:4, mr: 1}}
+															checked = {this.state.aggregatedChecked}
+															onChange = {(value) => {
+																if (value.target.checked === true)
+																{
+																	this.setState({aggregatedValues: true, aggregatedChecked: true, loadingData: "flex"}, ()=> {this.getDataFromQuery()})
+																}
+																else{
+																	this.setState({aggregatedValues: false, aggregatedChecked: false, loadingData: "flex"}, ()=> {this.getDataFromQuery()})
+																}														
+															}}
+														/>} label="Aggregated values"/>
+												}</span></CustomTooltip>
+								  </GridToolbarContainer>
+								);
+							  },
 						  }}
 					/>
 				</Box>
