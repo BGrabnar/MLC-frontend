@@ -7,7 +7,6 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.DrbgParameters.Reseed;
-import java.security.Identity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -102,8 +101,9 @@ public class AnnotateMLCdata {
 
 
 	//newly added resources
-	Resource DM_dataset_sampling_class;
+	Resource dataset_sampling_class;
 	Resource sampling_technique_class;
+	//Resource DM_stratified_dataset_class;
 
 	
 	// Properties ____(PREDICATES?)________
@@ -134,7 +134,7 @@ public class AnnotateMLCdata {
 
 
 	//newly added properties
-	OntPropery is_about;
+	OntProperty is_about;
 
 	public void addProperties(String[] evaluation_measures) {
 		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_DL_MEM);
@@ -161,14 +161,16 @@ public class AnnotateMLCdata {
 
 
 
-		//newly added:
-		DM_dataset_sampling_class_class = model.createResource(annotator.findURI(ontologyJSON, "DM-dataset-sampling"));
-		sampling_technique_class = model.createResource(annotator.findURI(ontologyJSON,"sampling-technique"));
+		//newly added resources:
+		dataset_sampling_class = model.createResource(annotator.findURI(ontologyJSON, "dataset sampling"));
+		sampling_technique_class = model.createResource(annotator.findURI(ontologyJSON,"sampling technique"));
 
 			
 		// evaluation measure URIs
 		addPropertiesEvaluationMeasures(evaluation_measures);
-		
+
+
+
 		// cross validation folds URIs
 		N_fold_cross_validation_evaluation_workflow_execution_class = model.createResource("http://www.ontodm.com/OntoDM-core/ontoexp_0005"); // findURI can't find it
 		N_fold_cross_validation_sampling_process_class = model.createResource(annotator.findURI(ontologyJSON, "N fold cross validation sampling process"));
@@ -204,6 +206,10 @@ public class AnnotateMLCdata {
 		number_of_examples = ontModel.createDatatypeProperty(annotator.findURI(ontologyJSON, "number of examples"));
 		number_of_folds = ontModel.createDatatypeProperty(annotator.findURI(ontologyJSON, "number of folds"));
 		algorithm_name = ontModel.createDatatypeProperty(annotator.findURI(ontologyJSON, "algorithm name"));
+
+		//newly added properties
+		is_about = ontModel.createObjectProperty(annotator.findURI(ontologyJSON, "is about"));
+
 
 		model.add(ontModel);
 	}
@@ -282,8 +288,15 @@ public class AnnotateMLCdata {
 		Resource predictive_model_test_set_evaluation_calculation_instance = annotator.createResource(predictive_model_test_set_evaluation_calculation_class, identifier_str+"_predictive_model_test_set_evaluation_calculation");
 
 
-		//ADD DATA SAMPLING INFORMATION FOR DATASET_TRAIN_INSTANCE
+		// ADD DATA SAMPLING INFORMATION FOR DATASET_TRAIN_INSTANCE
 
+		//basically the sampled (stratified) data
+		Resource dataset_sampled_train_instance = annotator.createResource(DM_dataset_class,dataExampleArray[0]+"_sampled_train.arff"); //new instance forsampled/stratified train data
+
+		//originates property
+		dataset_sampled_train_instance.addProperty(originates_from,dataset_train_instance);
+
+		//create it here? probably not
 
 		// evaluation measure instances
 //		Resource[] evaluation_measure_calculation_instances = new Resource[20];
@@ -490,11 +503,11 @@ public class AnnotateMLCdata {
 	}
 	
 	public static void main(String[] args) throws JsonIOException, JsonSyntaxException, IOException
-	{	
-		String path = "C:\\Users\\Ajax\\Desktop\\Praksa\\new data\\23.12.2021\\";  //path to the data(csv) folder
+	{
+		String path = "C:\\Users\\grabn\\Desktop\\23.12.2021\\";  //path to the data(csv) folder
 		Object owlObj = new JsonParser().parse(new FileReader(path+"ontoexpJSON.owl")); //json object creation 1
 		JsonArray ontoexpOntology = (JsonArray) owlObj;  //json object creation 2
-		
+
 		AnnotateMLCdata annotations = new AnnotateMLCdata(ontoexpOntology);  //annontator
 		
 		// read JSON models
