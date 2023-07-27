@@ -15,14 +15,14 @@ public class Reason {
 	
 
 	public static void main(String[] args) throws FileNotFoundException {
-		Model schema = RDFDataMgr.loadModel("C:\\Users\\grabn\\Desktop\\ontoexp.owl") ;
+		Model schema = RDFDataMgr.loadModel("C:\\Users\\grabn\\Desktop\\23.12.2021\\ontoexp.owl") ;
 //		Model data = FileManager.get().loadModel("C:\\Users\\ana\\Google Drive\\bookChapter\\TripleStore\\AnnotationsMLCNotSparse.rdf");
 		Reasoner reasoner = ReasonerRegistry.getOWLMicroReasoner();
 		reasoner = reasoner.bindSchema(schema);
 		System.out.println("Finished reasoning");
 		InfModel infmodel = ModelFactory.createInfModel(reasoner, schema);
 		System.out.println("Writing inferred model..");
-		PrintStream bw = new PrintStream("C:\\Users\\grabn\\Desktop\\ontoexpInfered.owl");
+		PrintStream bw = new PrintStream("C:\\Users\\grabn\\Desktop\\23.12.2021\\ontoexpInfered.owl");
 		RDFDataMgr.write(bw, infmodel, RDFFormat.RDFXML);
 		System.out.println("done");
 	}

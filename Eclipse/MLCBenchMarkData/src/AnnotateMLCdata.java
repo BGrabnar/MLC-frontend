@@ -305,6 +305,7 @@ public class AnnotateMLCdata {
 		
 		for (int i = 0; i < evaluation_measures.length; i++)
 		{
+			//PROBLEM?????
 			evaluation_measure_calculation_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_evaluation_measure_calculation");
 			predictive_modelling_evaluation_calculation_implementation_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_predictive_modelling_evaluation_calculation_implementation");
 			evaluation_measure_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_evaluation_measure");
@@ -389,7 +390,7 @@ public class AnnotateMLCdata {
 		{
 			// get other two folds
 			String otherFolds = "123".replaceAll(dataExampleArray[3], "");
-			otherFolds = otherFolds.substring(0,1) + "_" + otherFolds.substring(1); 
+			otherFolds = otherFolds.charAt(0) + "_" + otherFolds.substring(1);
 			
 			// upper level instances and properties
 			//cross validation fold instances
@@ -533,7 +534,9 @@ public class AnnotateMLCdata {
 		csvReaderFold.useDelimiter(",");
 		String[] evaluation_measures_fold = csvReaderFold.nextLine().substring(32).split(","); // substring is for removing the first four words
 		annotations.addPropertiesEvaluationMeasures(evaluation_measures_fold);
-		
+
+		//IT SOMEHOW WORKS UNTIL HERE
+
 		int i = 0;
 		while (csvReaderFold.hasNext()) //75479 max ________________________(WHY DO I HAVE 75481) AAAAAAAAAAAAAAAAAAAAAAAAAA
 		{
