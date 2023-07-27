@@ -522,14 +522,17 @@ public class AnnotateMLCdata {
 		//(up) make an array of values/strings to get the names of the columns
 		
 		annotations.addProperties(evaluation_measures); //add names of the properties to the anotations
-
+		int i = 0;
 		while (csvReaderTrainTest.hasNext()) //read lines of data while there is data (from the trainTest csv file)
 		{
 			annotations.annotateDataExample(csvReaderTrainTest.nextLine(), xsd_map_trainTest, evaluation_measures, true);  //input parameters: the line of data, the map, the names of the columns of csv file, boolean for checking if data is train data
+			i++;
+			if(i>10) break;
 		}
 		csvReaderTrainTest.close(); //close the reader
 		
-		// read folds.csv
+
+		//read folds.csv
 		Scanner csvReaderFold = new Scanner(new File(path+"folds.csv"));
 		csvReaderFold.useDelimiter(",");
 		String[] evaluation_measures_fold = csvReaderFold.nextLine().substring(32).split(","); // substring is for removing the first four words
@@ -537,18 +540,20 @@ public class AnnotateMLCdata {
 
 		//IT SOMEHOW WORKS UNTIL HERE
 
-		int i = 0;
+		 i = 0;
 		while (csvReaderFold.hasNext()) //75479 max ________________________(WHY DO I HAVE 75481) AAAAAAAAAAAAAAAAAAAAAAAAAA
 		{
 			annotations.annotateDataExample(csvReaderFold.nextLine(), xsd_map_fold, evaluation_measures_fold, false);
-			
-			
+
+
 			if(i % 10000 == 0)  //what is this?
 				System.out.println(i);
 			i++;
-				
+			if(i>10) break;
+
 		}
 		csvReaderFold.close();
+
 		
 		// save the model in RDF file
 		System.out.println("model size");
