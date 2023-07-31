@@ -101,7 +101,7 @@ public class AnnotateMLCdata {
 
 
 	//newly added resources
-	Resource dataset_sampling_class;
+	Resource DM_dataset_sampling_class;
 	Resource sampling_technique_class;
 	//Resource DM_stratified_dataset_class;
 
@@ -162,7 +162,7 @@ public class AnnotateMLCdata {
 
 
 		//newly added resources:
-		dataset_sampling_class = model.createResource(annotator.findURI(ontologyJSON, "dataset sampling"));
+		DM_dataset_sampling_class = model.createResource(annotator.findURI(ontologyJSON, "dataset sampling")); //MAYBE change name to "DM dataset sampling"
 		sampling_technique_class = model.createResource(annotator.findURI(ontologyJSON,"sampling technique"));
 
 			
@@ -265,7 +265,7 @@ public class AnnotateMLCdata {
 			identifier_str_xsd = dataExampleArray[0]+"-"+dataExampleArray[1]+"-"+dataExampleArray[2]+"-"+dataExampleArray[3];
 			
 			evaluation_measure_calculation_instances = new Resource[18];
-			predictive_modelling_evaluation_calculation_implementation_instances = new Resource[18];
+			predictive_modelling_evaluation_calculation_implementation_instances = new Resource[18];   //SOMETHIGN WITH THESE 18 MIGHT NOT BE RIGHT, IDK THO
 			evaluation_measure_instances = new Resource[18];
 		}
 
@@ -296,19 +296,30 @@ public class AnnotateMLCdata {
 		//originates property
 		dataset_sampled_train_instance.addProperty(originates_from,dataset_train_instance);
 
+		//ADD STUFF TO GET THE DM DATA SAMPLING
+		Resource one_time_make_dataset_sampling_instance = annotator.createResource(DM_dataset_sampling_class, "sampling _stuff");  //it doesn find the class??
+
+		//THIS IS WRONG JUST A TEST
+		/*
+		dataset_sampled_train_instance.addProperty(originates_from,one_time_make_dataset_sampling_instance);*/
+
 		//create it here? probably not
 
 		// evaluation measure instances
 //		Resource[] evaluation_measure_calculation_instances = new Resource[20];
 //		Resource[] predictive_modelling_evaluation_calculation_implementation_instances = new Resource[20];
 //		Resource[] evaluation_measure_instances = new Resource[20];
-		
+		System.out.println("");
 		for (int i = 0; i < evaluation_measures.length; i++)
 		{
+		System.out.println("Evaluation measures: " + evaluation_measures[i] );
+		System.out.println("Evaluation measures class: " + evaluation_measure_classes[i] );
 			//PROBLEM?????
 			evaluation_measure_calculation_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_evaluation_measure_calculation");
 			predictive_modelling_evaluation_calculation_implementation_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_predictive_modelling_evaluation_calculation_implementation");
 			evaluation_measure_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_evaluation_measure");
+
+
 		}
 		
 		// adding properties
@@ -527,7 +538,7 @@ public class AnnotateMLCdata {
 		{
 			annotations.annotateDataExample(csvReaderTrainTest.nextLine(), xsd_map_trainTest, evaluation_measures, true);  //input parameters: the line of data, the map, the names of the columns of csv file, boolean for checking if data is train data
 			i++;
-			if(i>10) break;
+			if(i>7) break;
 		}
 		csvReaderTrainTest.close(); //close the reader
 		
@@ -538,7 +549,7 @@ public class AnnotateMLCdata {
 		String[] evaluation_measures_fold = csvReaderFold.nextLine().substring(32).split(","); // substring is for removing the first four words
 		annotations.addPropertiesEvaluationMeasures(evaluation_measures_fold);
 
-		//IT SOMEHOW WORKS UNTIL HERE
+
 
 		 i = 0;
 		while (csvReaderFold.hasNext()) //75479 max ________________________(WHY DO I HAVE 75481) AAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -549,7 +560,7 @@ public class AnnotateMLCdata {
 			if(i % 10000 == 0)  //what is this?
 				System.out.println(i);
 			i++;
-			if(i>10) break;
+			if(i>7) break;
 
 		}
 		csvReaderFold.close();
