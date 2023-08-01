@@ -103,10 +103,10 @@ public class AnnotateMLCdata {
 	//newly added resources
 	Resource DM_dataset_sampling_class;
 	Resource sampling_technique_class;
-	//Resource DM_stratified_dataset_class;
+
 
 	
-	// Properties ____(PREDICATES?)________
+	// Properties
 	OntProperty precedes;
 	OntProperty preceded_by;
 	OntProperty has_part;
@@ -131,7 +131,6 @@ public class AnnotateMLCdata {
 	OntProperty number_of_examples;
 	OntProperty number_of_folds;
 	OntProperty algorithm_name;
-
 
 	//newly added properties
 	OntProperty is_about;
@@ -162,14 +161,11 @@ public class AnnotateMLCdata {
 
 
 		//newly added resources:
-		DM_dataset_sampling_class = model.createResource(annotator.findURI(ontologyJSON, "dataset sampling")); //MAYBE change name to "DM dataset sampling"
+		DM_dataset_sampling_class = model.createResource(annotator.findURI(ontologyJSON, "dataset sampling"));
 		sampling_technique_class = model.createResource(annotator.findURI(ontologyJSON,"sampling technique"));
-
 			
 		// evaluation measure URIs
 		addPropertiesEvaluationMeasures(evaluation_measures);
-
-
 
 		// cross validation folds URIs
 		N_fold_cross_validation_evaluation_workflow_execution_class = model.createResource("http://www.ontodm.com/OntoDM-core/ontoexp_0005"); // findURI can't find it
@@ -210,7 +206,6 @@ public class AnnotateMLCdata {
 		//newly added properties
 		is_about = ontModel.createObjectProperty(annotator.findURI(ontologyJSON, "is about"));
 
-
 		model.add(ontModel);
 	}
 	
@@ -225,10 +220,11 @@ public class AnnotateMLCdata {
 	}
 		
 	public void annotateDataExample(String dataExample, Map<String, String> xsd_string_map, String[] evaluation_measures, Boolean isTrainTestSplit) {
-		
+
+		// line of data gets split into an array
 		String[] dataExampleArrayWithFirst = dataExample.split(",");
 		String[] dataExampleArray = new String[dataExampleArrayWithFirst.length-1];
-		//(up) line of data gets split into an array
+
 
 		for (int i = 1; i < dataExampleArrayWithFirst.length; i++)
 		{
@@ -253,8 +249,8 @@ public class AnnotateMLCdata {
 		Resource[] evaluation_measure_instances;
 		
 		if(isTrainTestSplit){ //when we are dealing with training data
-			identifier_str = dataExampleArray[0]+"_"+dataExampleArray[1]; //name of the identifier /we created these reasurces
-			identifier_str_xsd = dataExampleArray[0]+"-"+dataExampleArray[1]; //same but for rdf/protege
+			identifier_str = dataExampleArray[0]+"_"+dataExampleArray[1];
+			identifier_str_xsd = dataExampleArray[0]+"-"+dataExampleArray[1];
 			
 			evaluation_measure_calculation_instances = new Resource[20];
 			predictive_modelling_evaluation_calculation_implementation_instances = new Resource[20];
@@ -265,7 +261,7 @@ public class AnnotateMLCdata {
 			identifier_str_xsd = dataExampleArray[0]+"-"+dataExampleArray[1]+"-"+dataExampleArray[2]+"-"+dataExampleArray[3];
 			
 			evaluation_measure_calculation_instances = new Resource[18];
-			predictive_modelling_evaluation_calculation_implementation_instances = new Resource[18];   //SOMETHIGN WITH THESE 18 MIGHT NOT BE RIGHT, IDK THO
+			predictive_modelling_evaluation_calculation_implementation_instances = new Resource[18];
 			evaluation_measure_instances = new Resource[18];
 		}
 
@@ -288,33 +284,37 @@ public class AnnotateMLCdata {
 		Resource predictive_model_test_set_evaluation_calculation_instance = annotator.createResource(predictive_model_test_set_evaluation_calculation_class, identifier_str+"_predictive_model_test_set_evaluation_calculation");
 
 
-		// ADD DATA SAMPLING INFORMATION FOR DATASET_TRAIN_INSTANCE
-
-		//basically the sampled (stratified) data
-		Resource dataset_sampled_train_instance = annotator.createResource(DM_dataset_class,dataExampleArray[0]+"_sampled_train.arff"); //new instance forsampled/stratified train data
-
+		//sampled (stratified) data
+		Resource dataset_sampled_train_instance = annotator.createResource(DM_dataset_class,dataExampleArray[0]+"_1000_sampled_train.arff"); //new instance for sampled/stratified train data
 		//originates property
 		dataset_sampled_train_instance.addProperty(originates_from,dataset_train_instance);
 
-		//ADD STUFF TO GET THE DM DATA SAMPLING
-		Resource one_time_make_dataset_sampling_instance = annotator.createResource(DM_dataset_sampling_class, "sampling _stuff");  //it doesn find the class??
 
-		//THIS IS WRONG JUST A TEST
-		/*
-		dataset_sampled_train_instance.addProperty(originates_from,one_time_make_dataset_sampling_instance);*/
+		//create the DM data sampling instance
+		Resource stratified_sampling_instance = annotator.createResource(DM_dataset_sampling_class, dataExampleArray[0]+"_train_1000_stratified_sampling");
 
-		//create it here? probably not
+		//add from sampling to the whole train set (2X)
+		stratified_sampling_instance.addProperty(has_specified_input,dataset_train_instance);
+		dataset_train_instance.addProperty(is_specified_input_of,stratified_sampling_instance);
+
+		//add from sampling to the sampled train set (2X)
+		stratified_sampling_instance.addProperty(has_specified_output,dataset_sampled_train_instance);
+		dataset_sampled_train_instance.addProperty(is_specified_output_of,stratified_sampling_instance);
+
+		//create instance of sampling tecnique
+		Resource sampling_technique_instance = annotator.createResource(sampling_technique_class, "MLC iterative stratified sampling technique");
+
+		//connect sampling instance with DM dataset sampling via 'is_about'
+		sampling_technique_instance.addProperty(is_about,stratified_sampling_instance);
 
 		// evaluation measure instances
 //		Resource[] evaluation_measure_calculation_instances = new Resource[20];
 //		Resource[] predictive_modelling_evaluation_calculation_implementation_instances = new Resource[20];
 //		Resource[] evaluation_measure_instances = new Resource[20];
-		System.out.println("");
+
 		for (int i = 0; i < evaluation_measures.length; i++)
 		{
-		System.out.println("Evaluation measures: " + evaluation_measures[i] );
-		System.out.println("Evaluation measures class: " + evaluation_measure_classes[i] );
-			//PROBLEM?????
+
 			evaluation_measure_calculation_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_evaluation_measure_calculation");
 			predictive_modelling_evaluation_calculation_implementation_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_predictive_modelling_evaluation_calculation_implementation");
 			evaluation_measure_instances[i] = annotator.createResource(evaluation_measure_classes[i], identifier_str+"_"+evaluation_measures[i]+"_evaluation_measure");
@@ -359,7 +359,6 @@ public class AnnotateMLCdata {
 		}
 		else 
 		{
-//			System.out.println(isTrainTestSplit + " "+ identifier_str_xsd);
 			predictive_model_instance.addProperty(denoted_by, "Missing model_parameters.");
 		}
 		
@@ -496,14 +495,15 @@ public class AnnotateMLCdata {
 		
 		try (FileReader jsonReader = new FileReader(path))
 		{
-			Object jsonObj = jsonP.parse(jsonReader);  //it parses only 1 object? ( no it takes everything)
+			Object jsonObj = jsonP.parse(jsonReader);
 			xsd_string_list = (JSONArray) jsonObj;
-			xsd_string_list.toArray();  //?it  converts it but leaves it in the same variable?
-			for (int i = 0; i < xsd_string_list.size(); i++) //go through the objects
+			xsd_string_list.toArray();
+			//go through the objects
+			for (int i = 0; i < xsd_string_list.size(); i++)
 			{
 				String str = xsd_string_list.get(i).toString();
 				String[] twoStr = str.split(",", 2);
-				xsd_map.put(twoStr[0].substring(15, twoStr[0].length()-1), twoStr[1].substring(0, twoStr[1].length()-1)); //identifier is just the actual string and the value is just { } with stuff inside
+				xsd_map.put(twoStr[0].substring(15, twoStr[0].length()-1), twoStr[1].substring(0, twoStr[1].length()-1));
 			}
 		}
 		catch (Exception e)
@@ -516,11 +516,11 @@ public class AnnotateMLCdata {
 	
 	public static void main(String[] args) throws JsonIOException, JsonSyntaxException, IOException
 	{
-		String path = "C:\\Users\\grabn\\Desktop\\23.12.2021\\";  //path to the data(csv) folder
-		Object owlObj = new JsonParser().parse(new FileReader(path+"ontoexpJSON.owl")); //json object creation 1
-		JsonArray ontoexpOntology = (JsonArray) owlObj;  //json object creation 2
+		String path = "C:\\Users\\grabn\\Desktop\\23.12.2021\\";  //path to the data folder
+		Object owlObj = new JsonParser().parse(new FileReader(path+"ontoexpJSON.owl"));
+		JsonArray ontoexpOntology = (JsonArray) owlObj;
 
-		AnnotateMLCdata annotations = new AnnotateMLCdata(ontoexpOntology);  //annontator
+		AnnotateMLCdata annotations = new AnnotateMLCdata(ontoexpOntology);
 		
 		// read JSON models
 		Map<String, String> xsd_map_trainTest = getModelParametersMap(path+"trainTestModels.json");
@@ -534,15 +534,24 @@ public class AnnotateMLCdata {
 		
 		annotations.addProperties(evaluation_measures); //add names of the properties to the anotations
 		int i = 0;
-		while (csvReaderTrainTest.hasNext()) //read lines of data while there is data (from the trainTest csv file)
+		while (csvReaderTrainTest.hasNext())
 		{
 			annotations.annotateDataExample(csvReaderTrainTest.nextLine(), xsd_map_trainTest, evaluation_measures, true);  //input parameters: the line of data, the map, the names of the columns of csv file, boolean for checking if data is train data
 			i++;
-			if(i>7) break;
+			//if(i>1) break;
 		}
 		csvReaderTrainTest.close(); //close the reader
-		
 
+		System.out.print("Train/test model size: ");
+		System.out.println(annotations.model.size());
+		PrintStream bw = new PrintStream(path+"MLCExperimentTrainTestAnnotations.rdf");
+		RDFDataMgr.write(bw, annotations.model, RDFFormat.RDFXML);
+		bw.close();
+		System.out.println("Train/Test done");
+
+
+
+		//folds rdf part
 		//read folds.csv
 		Scanner csvReaderFold = new Scanner(new File(path+"folds.csv"));
 		csvReaderFold.useDelimiter(",");
@@ -551,27 +560,50 @@ public class AnnotateMLCdata {
 
 
 
-		 i = 0;
-		while (csvReaderFold.hasNext()) //75479 max ________________________(WHY DO I HAVE 75481) AAAAAAAAAAAAAAAAAAAAAAAAAA
-		{
-			annotations.annotateDataExample(csvReaderFold.nextLine(), xsd_map_fold, evaluation_measures_fold, false);
+			annotations = new AnnotateMLCdata(ontoexpOntology);
+			annotations.addProperties(evaluation_measures);
+			i=0;
+
+			while(csvReaderFold.hasNext()) //75479 max
+			{
+				annotations.annotateDataExample(csvReaderFold.nextLine(), xsd_map_fold, evaluation_measures_fold, false);
+
+				i++;
+				if(i % 10000 == 0) {
+					System.out.println(i);
+				}
+				//if(i>20000) break;
+
+			}
 
 
-			if(i % 10000 == 0)  //what is this?
-				System.out.println(i);
-			i++;
-			if(i>7) break;
-
-		}
 		csvReaderFold.close();
 
-		
 		// save the model in RDF file
-		System.out.println("model size");
+		System.out.print("model size: ");
 		System.out.println(annotations.model.size());
-		PrintStream bw = new PrintStream(path+"MLCExperimentDataAnnotationsSmall1.rdf");
-		RDFDataMgr.write(bw, annotations.model, RDFFormat.RDFXML);
+		PrintStream bw1 = new PrintStream(path+"MLCExperimentDataAnnotationsSmall1.rdf");
+		System.out.println("Middle1");
+		RDFDataMgr.write(bw1, annotations.model, RDFFormat.RDFXML);
+		System.out.println("Middle2");
 		bw.close();
 		System.out.println("Done");
 	}
 }
+
+
+/*
+System.out.printf("\r");
+					for (int e = 0; e < i/10000; e++) {
+
+						System.out.print("*");
+
+					}
+					for (int e = 0; e < 10-(i/10000); e++) {
+
+						System.out.print(" ");
+
+					}
+
+					System.out.printf("|%d out of %d",i/10000,5);
+ */
