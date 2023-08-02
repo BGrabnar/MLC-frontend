@@ -558,39 +558,33 @@ public class AnnotateMLCdata {
 		csvReaderFold.useDelimiter(",");
 		String[] evaluation_measures_fold = csvReaderFold.nextLine().substring(32).split(","); // substring is for removing the first four words
 		annotations.addPropertiesEvaluationMeasures(evaluation_measures_fold);
-
-		int intervalSize = 75479/10;
-
-
-		for(int j = 0;j<11;j++) {
-
-			AnnotateMLCdata annotationss = new AnnotateMLCdata(ontoexpOntology);
-			annotationss.addProperties(evaluation_measures);
+		int number_of_lines_in_CV_table = 75479;
+		int max_CV_annotations_part_size = 7503; //!!this should be divisible by 3(number of folds)!!
 
 
-			int z = 0;
-			for(int k = 0;(csvReaderFold.hasNext())&&(k<intervalSize-101);k++)    //75479 max  //CHECK THIS STUFF
+		for(int part = 0;csvReaderFold.hasNext();part++) {
+
+			AnnotateMLCdata annotations_cv_part = new AnnotateMLCdata(ontoexpOntology);
+			annotations_cv_part.addProperties(evaluation_measures);
+
+
+			int part_line_counter = 0;
+			for(int k = 0;csvReaderFold.hasNext()&&k<max_CV_annotations_part_size;k++)
 			{
 				System.out.println("iter: " + k);
 				String lmao = csvReaderFold.nextLine();
-				System.out.println(lmao);
-				annotationss.annotateDataExample(lmao, xsd_map_fold, evaluation_measures_fold, false);
-
-				i++;
-				if (i % 10000 == 0) {
-					System.out.println(i);
-				}
-				//if(i>10000) break;
-				z=k;
+				//System.out.println(lmao);
+				annotations_cv_part.annotateDataExample(lmao, xsd_map_fold, evaluation_measures_fold, false);
+				part_line_counter++;
 			}
-			System.out.printf("Number of stuff in %d iteration: %d\n",j,z);
+			System.out.printf("Number of lines annotated in %d iteration: %d\n",part,part_line_counter);
 			System.out.println("_______________________________");
 
-			System.out.print("MLCExperimentDataAnnotationsSmall"+j+".rdf model size: ");
-			System.out.println(annotationss.model.size());
-			PrintStream bw1 = new PrintStream(path+"MLCExperimentDataAnnotationsSmall"+j+".rdf");
+			System.out.print("MLCExperimentDataAnnotationsSmall"+part+".rdf model size: ");
+			System.out.println(annotations_cv_part.model.size());
+			PrintStream bw1 = new PrintStream(path+"MLCExperimentDataAnnotationsSmall"+part+".rdf");
 			System.out.println("Middle1");
-			RDFDataMgr.write(bw1, annotationss.model, RDFFormat.RDFXML);
+			RDFDataMgr.write(bw1, annotations_cv_part.model, RDFFormat.RDFXML);
 			System.out.println("Middle2");
 			bw1.close();
 
